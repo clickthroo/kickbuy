@@ -6,7 +6,15 @@ import { saleSourceLabel } from "@/lib/labels";
 // A plain GET form, so filters live in the URL and work without JavaScript.
 export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
   return (
-    <form method="get" className="card grid gap-3 p-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
+    <details className="card" open={hasFilters(f)}>
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">
+        Filter and sort
+        <span className="ml-2 font-normal text-muted">
+          {SORTS[f.sort]}
+          {hasFilters(f) && " · filtered"}
+        </span>
+      </summary>
+    <form method="get" className="grid gap-3 border-t border-border p-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
       <label className="sm:col-span-2">
         <span className="label">Search title</span>
         <input name="q" defaultValue={f.q} placeholder="e.g. Umbro 1997" className="input mt-1" />
@@ -105,5 +113,6 @@ export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
         )}
       </div>
     </form>
+    </details>
   );
 }

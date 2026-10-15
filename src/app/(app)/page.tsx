@@ -29,7 +29,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
             never changes a listing.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1 text-sm">
+        <div className="flex flex-col items-start gap-1 text-sm sm:items-end">
           {hasRole(user, "buyer") && <RunScanButton />}
           <span className="text-xs text-muted">
             {summary.running

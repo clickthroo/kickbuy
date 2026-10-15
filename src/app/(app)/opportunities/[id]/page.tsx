@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ConfidenceBadge, PreLiveBadge, StaleBadge, StatusBadge } from "@/components/badges";
 import { hasRole, requireUser } from "@/lib/auth";
 import { getOpportunity } from "@/lib/data/opportunities";
-import { date, dateTime, money, monthsAgo, pct } from "@/lib/format";
+import { age, date, dateTime, money, pct } from "@/lib/format";
 import { kickioListingUrl, kickioReviewQueueUrl } from "@/lib/kickio-links";
 import { CONFIDENCE_LABELS, listingStatusLabel, saleSourceLabel } from "@/lib/labels";
 import { setOpportunityStatus } from "../actions";
@@ -109,7 +109,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                 v={`${money(o.ref_original_pence, o.ref_currency)} at ${Number(o.ref_fx_rate)} ${o.ref_currency}/GBP`}
               />
             )}
-            <Row k="Sold on" v={`${date(o.ref_sold_at)} (${monthsAgo(o.ref_sold_at)} months ago)`} />
+            <Row k="Sold on" v={`${date(o.ref_sold_at)} (${age(o.ref_sold_at)})`} />
             <Row k="Where" v={saleSourceLabel(o.ref_source)} />
             <Row k="Size" v={o.ref_size} />
             <Row k="Match" v={CONFIDENCE_LABELS[o.confidence]} />
@@ -252,7 +252,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
               })),
               ...actions.map((a) => ({
                 at: a.at,
-                text: `${a.email ?? "Someone"}: ${a.action.replace("opportunity.", "")}${a.detail.note ? `: "${a.detail.note}"` : ""}`,
+                text: `${a.email ?? "Someone"} ${ACTION_LABELS[a.action] ?? a.action}${a.detail.note ? `: "${a.detail.note}"` : ""}`,
               })),
               { at: o.first_detected_at, text: "First detected" },
             ]
@@ -270,6 +270,12 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
     </div>
   );
 }
+
+const ACTION_LABELS: Record<string, string> = {
+  "opportunity.watch": "started watching",
+  "opportunity.dismiss": "dismissed it",
+  "opportunity.reopen": "moved it back to new",
+};
 
 function Figure({ label, value, note, strong }: { label: string; value: string; note?: string; strong?: boolean }) {
   return (

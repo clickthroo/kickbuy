@@ -34,7 +34,10 @@ export function ago(d: Date | string | null | undefined, now = new Date()): stri
   return `${Math.floor(s / 86400)} d ago`;
 }
 
-export function monthsAgo(d: Date | string, now = new Date()): number {
-  const then = new Date(d);
-  return (now.getUTCFullYear() - then.getUTCFullYear()) * 12 + now.getUTCMonth() - then.getUTCMonth();
+export function age(d: Date | string, now = new Date()): string {
+  const days = Math.floor((now.getTime() - new Date(d).getTime()) / 86_400_000);
+  if (days < 1) return "today";
+  if (days < 60) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.floor(days / 30.44);
+  return months < 24 ? `${months} months ago` : `${Math.floor(months / 12)} years ago`;
 }

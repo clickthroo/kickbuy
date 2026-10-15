@@ -39,11 +39,16 @@ export function SettingsForm({ canEdit, settings, sources }: Props) {
             onChange={(e) => setThreshold(Number(e.target.value))}
             className="w-full accent-[var(--accent)]"
           />
-          <div className="flex justify-between text-xs text-muted">
-            <span>5%</span>
-            <span>20%</span>
-            <span>40%</span>
-            <span>60%</span>
+          <div className="relative h-4 text-xs text-muted">
+            {[5, 20, 40, 60].map((t) => (
+              <span
+                key={t}
+                className="absolute -translate-x-1/2 first:translate-x-0 last:-translate-x-full"
+                style={{ left: `${((t - 5) / 55) * 100}%` }}
+              >
+                {t}%
+              </span>
+            ))}
           </div>
         </div>
 
