@@ -6,16 +6,19 @@ import { hasRole, requireUser } from "@/lib/auth";
 import { dashboardSummary, listOpportunities, PAGE_SIZE, refSources } from "@/lib/data/opportunities";
 import { filtersToQuery, parseFilters } from "@/lib/filters";
 import { ago, money } from "@/lib/format";
+import { timed } from "@/lib/timed";
 
 export default async function Dashboard({ searchParams }: PageProps<"/">) {
   const user = await requireUser();
   const f = parseFilters(await searchParams);
-  const [summary, preLive, list, sources] = await Promise.all([
-    dashboardSummary(),
-    f.listing === "live" ? null : listOpportunities({ ...f, page: 1 }, { preLiveOnly: true, limit: 10 }),
-    listOpportunities(f),
-    refSources(),
-  ]);
+  const summary = await timed("dashboardSummary", dashboardSummary());
+  const preLive =
+    f.listing === "live"
+      ? null
+      : await timed("listOpportunities(pre-live)", listOpportunities({ ...f, page: 1 }, { preLiveOnly: true, limit: 10 }));
+  const list = await timed("listOpportunities", listOpportunities(f));
+  const sources = await timed("refSources", refSources());
+  console.info("[dashboard] data loaded", { open: summary.openCount, rows: list.rows.length });
   const pages = Math.max(1, Math.ceil(list.total / PAGE_SIZE));
   const last = summary.lastRun;
 

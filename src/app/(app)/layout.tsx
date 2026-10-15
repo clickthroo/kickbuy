@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { hasRole, requireUser } from "@/lib/auth";
 import { unreadAlertCount } from "@/lib/data/alerts";
+import { timed } from "@/lib/timed";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
-  const unread = await unreadAlertCount(user.id);
+  const unread = await timed("unreadAlertCount", unreadAlertCount(user.id));
   return (
     <div className="min-h-screen">
       <header className="border-b border-border bg-surface">

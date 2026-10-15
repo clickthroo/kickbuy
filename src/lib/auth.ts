@@ -3,6 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { app } from "./db";
+import { timed } from "./timed";
 import { supabaseServer } from "./supabase/server";
 
 export type Role = "owner" | "buyer" | "viewer";
@@ -36,10 +37,13 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     return { kind: "needs-mfa" };
   }
 
-  const rows = await app()<{ email: string; role: Role }[]>`
-    select email, role from kickbuy.app_users
-    where user_id = ${data.user.id} and active
-  `;
+  const rows = await timed(
+    "app_users lookup",
+    app()<{ email: string; role: Role }[]>`
+      select email, role from kickbuy.app_users
+      where user_id = ${data.user.id} and active
+    `,
+  );
   if (rows.length === 0) return { kind: "not-authorised", email: data.user.email ?? "" };
   return { kind: "ok", user: { id: data.user.id, email: rows[0].email, role: rows[0].role } };
 });
