@@ -28,6 +28,7 @@ const L4 = "20000000-0000-0000-0000-000000000004"; // Arsenal; only valid sale i
 const L5 = "20000000-0000-0000-0000-000000000005"; // "Spurs" alias
 const L6 = "20000000-0000-0000-0000-000000000006"; // draft: out of scope
 const SOLD = "20000000-0000-0000-0000-000000000009"; // sold listing whose order was refunded
+const L7 = "20000000-0000-0000-0000-000000000007"; // Kickio Direct stock: never an opportunity
 
 describe.skipIf(!base)("scan (integration)", () => {
   let admin: postgres.Sql;
@@ -202,6 +203,7 @@ async function seed(sql: postgres.Sql) {
     listing(L5, { ...utd, team: "Spurs", season: "2010-11", price_cents: 3000 }),
     listing(L6, { product_id: P_UTD, status: "draft", price_cents: 100 }),
     listing(SOLD, { product_id: P_ARS, status: "sold" }),
+    listing(L7, { product_id: P_UTD, price_cents: 1000, seller_id: "ee2ce3bb-30d8-4f94-8cfd-a575866af57e" }),
   ]);
   const sale = (o: Record<string, unknown>) => ({
     condition: "Very Good", size: "L", source: "cfs", sold_at: new Date("2026-09-01"), price_cents: 12000, ...o,

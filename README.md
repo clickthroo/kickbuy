@@ -39,7 +39,9 @@ TOTP. All database access is server-side; no credentials reach the browser.
 
 ## How an opportunity is found
 
-For each listing in scope (live, reserved, or in the review queue):
+For each listing in scope (live, reserved, or in the review queue). Kickio
+Direct stock (Kickio's own house seller account) is excluded: Kickio already
+owns it. See `EXCLUDED_SELLER_IDS` in `src/lib/scan/run.ts`.
 
 1. **Identify the shirt** (`src/lib/engine/match.ts`). Kickio's product is its
    canonical shirt identity, so a listing and a sale linked to the same

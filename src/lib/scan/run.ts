@@ -47,6 +47,11 @@ export type ScanStats = {
   alertsCreated: number;
 };
 
+// Kickio's own stock ("Kickio Direct", the house seller account that
+// KickAccount values). Kickio already owns it, so it's never a buying
+// opportunity.
+export const EXCLUDED_SELLER_IDS = ["ee2ce3bb-30d8-4f94-8cfd-a575866af57e"];
+
 const PAGE = 2000;
 const FULL_SCAN_EVERY_MS = 24 * 60 * 60 * 1000;
 const STUCK_AFTER_MS = 15 * 60 * 1000;
@@ -322,6 +327,7 @@ async function loadInventory(sql: postgres.Sql, f: InventoryFilter): Promise<Inv
       select ${sql.unsafe(INVENTORY_COLUMNS)}
       from kickbuy.inventory
       where listing_id > ${after}
+        and seller_id <> all(${EXCLUDED_SELLER_IDS}::uuid[])
         ${where}
       order by listing_id
       limit ${PAGE}
