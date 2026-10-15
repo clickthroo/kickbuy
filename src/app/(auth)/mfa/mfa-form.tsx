@@ -1,7 +1,7 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { verifyMfa } from "./actions";
 
 type Mode =
   | { kind: "loading" }
@@ -12,11 +12,10 @@ type Mode =
 // Every KickBuy session must reach AAL2. First sign-in enrols an
 // authenticator app; later sign-ins ask for its current code.
 export function MfaForm() {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>({ kind: "loading" });
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     const supabase = supabaseBrowser();
@@ -41,19 +40,16 @@ export function MfaForm() {
     })();
   }, []);
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
     if (mode.kind !== "enrol" && mode.kind !== "verify") return;
-    setPending(true);
+    const factorId = mode.factorId;
     setError(null);
-    const { error } = await supabaseBrowser().auth.mfa.challengeAndVerify({
-      factorId: mode.factorId,
-      code: code.trim(),
+    // Verified server-side; on success the action redirects to the app.
+    startTransition(async () => {
+      const message = await verifyMfa(factorId, code.trim());
+      if (message) setError(message);
     });
-    setPending(false);
-    if (error) return setError("That code didn't work. Check your authenticator app and try again.");
-    router.replace("/");
-    router.refresh();
   }
 
   if (mode.kind === "loading") return <p className="text-sm text-muted">Loading…</p>;

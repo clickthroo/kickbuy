@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { app } from "./db";
 import { supabaseServer } from "./supabase/server";
@@ -26,7 +27,14 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
   if (error || !data.user) return { kind: "signed-out" };
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aal?.currentLevel !== "aal2") return { kind: "needs-mfa" };
+  if (aal?.currentLevel !== "aal2") {
+    if (aal?.nextLevel === "aal2") {
+      // Diagnostic for login loops: which auth cookies arrived (names only).
+      const names = (await cookies()).getAll().map((c) => c.name).filter((n) => n.startsWith("sb-"));
+      console.info("[auth] needs-mfa", { userId: data.user.id, current: aal?.currentLevel, cookies: names });
+    }
+    return { kind: "needs-mfa" };
+  }
 
   const rows = await app()<{ email: string; role: Role }[]>`
     select email, role from kickbuy.app_users
