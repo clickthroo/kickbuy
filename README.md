@@ -127,5 +127,8 @@ KICKBUY_TEST_PG=postgres://postgres@localhost:5432/postgres npm run test:integra
 2. Create the Vercel project with the variables in `.env.example`
    (`CRON_SECRET` enables the scheduled scan).
 3. First owner: `node scripts/bootstrap-owner.mjs you@example.com` (needs the
-   env vars it lists) prints a one-time invite link.
+   env vars it lists) prints a one-time invite link. If you can't reach the
+   databases from your machine, set `SETUP_TOKEN` in Vercel and use
+   `/api/setup?token=…&action=check|owner&email=…|scan` on the deployment
+   (see `src/app/api/setup/route.ts`), then remove `SETUP_TOKEN`.
 4. Sign in, then run the first scan from the dashboard.

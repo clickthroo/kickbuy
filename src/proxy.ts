@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-// /api/cron authenticates with CRON_SECRET instead of a session.
-const PUBLIC_PATHS = ["/login", "/auth/confirm", "/api/cron"];
+// /api/cron and /api/setup authenticate with their own secrets instead of a session.
+const PUBLIC_PATHS = ["/login", "/auth/confirm", "/api/cron", "/api/setup"];
 
 // Refreshes the Supabase session cookie on every request and bounces
 // signed-out visitors to /login. This is only the optimistic first gate: every
