@@ -2,9 +2,12 @@ import "server-only";
 import postgres from "postgres";
 import { env } from "./env";
 
-// Both URLs point at Supabase's transaction pooler, which doesn't support
-// prepared statements.
-const options = { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 10 } as const;
+// Both URLs point at Supabase's transaction pooler (Supavisor), which doesn't
+// support prepared statements and can stall on pipelined queries. postgres.js
+// pipelines up to 100 queries per connection by default once every
+// connection is busy, which the dashboard's parallel queries trigger; so
+// pipelining is switched off and queries queue for a free connection instead.
+const options = { prepare: false, max: 5, max_pipeline: 1, idle_timeout: 20, connect_timeout: 10 } as const;
 
 const globalForDb = globalThis as unknown as {
   kickioSql?: postgres.Sql;
