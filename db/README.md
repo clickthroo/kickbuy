@@ -6,7 +6,7 @@ KickBuy touches two Postgres databases. Migrations are applied by hand
 | Folder | Database | What it does |
 |---|---|---|
 | `kickio/` | Kickio (`rlveellvebfzgyobceru`) | Read-only interface: the `kickbuy` schema of views, and the `kickbuy_reader` role that can only read them. **Additive only. Never alters Kickio tables.** |
-| `kickbuy/` | KickBuy (its own Supabase project) | The `kickbuy` schema: users/roles, settings, opportunities, price snapshots, scan runs, alerts, user actions, and the `kickbuy_app` role. |
+| `kickbuy/` | KickBuy (`ovbqruuzquxidgnbbnxo`) | The `kickbuy` schema: users/roles, settings, opportunities, price snapshots, scan runs, alerts, user actions, and the `kickbuy_app` role. |
 
 ## What KickBuy can see in Kickio
 
