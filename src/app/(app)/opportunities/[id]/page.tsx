@@ -68,6 +68,11 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             <a href={kickioListingUrl(o.listing_id)} target="_blank" rel="noreferrer" className="btn btn-secondary justify-center">
               Open listing on Kickio ↗
             </a>
+            {o.source_url && (
+              <a href={o.source_url} target="_blank" rel="noreferrer" className="btn btn-secondary justify-center">
+                Open source product page{o.source_name ? ` (${o.source_name})` : ""} ↗
+              </a>
+            )}
             {o.pre_live && (
               <>
                 <a href={kickioReviewQueueUrl()} target="_blank" rel="noreferrer" className="btn btn-secondary justify-center">

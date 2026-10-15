@@ -433,6 +433,7 @@ async function record(
           team = excluded.team, season = excluded.season, shirt_type = excluded.shirt_type,
           manufacturer = excluded.manufacturer, player_name = excluded.player_name, size = excluded.size,
           condition = excluded.condition, image_url = excluded.image_url, source_name = excluded.source_name,
+          source_url = excluded.source_url,
           listed_at = excluded.listed_at, ask_pence = excluded.ask_pence, ask_currency = excluded.ask_currency,
           ref_sale_id = excluded.ref_sale_id, ref_price_pence = excluded.ref_price_pence,
           ref_original_pence = excluded.ref_original_pence, ref_currency = excluded.ref_currency,
@@ -510,6 +511,7 @@ function opportunityRow(
     condition: l.condition ?? "",
     image_url: l.image_url,
     source_name: l.source_name,
+    source_url: safeUrl(l.source_url),
     listed_at: l.created_at,
     ask_pence: e.askPence,
     ask_currency: l.currency.toUpperCase(),
@@ -546,4 +548,15 @@ function opportunityRow(
     expired_at: status === "expired" ? now : null,
     expired_reason: expiredReason,
   };
+}
+
+// Only http(s) links are stored, so nothing else can end up in an href.
+function safeUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
 }

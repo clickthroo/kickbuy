@@ -1,6 +1,7 @@
 import "server-only";
 import type postgres from "postgres";
 import { app } from "../db";
+import { timed } from "../timed";
 import type { Confidence } from "../engine/match";
 import type { Filters } from "../filters";
 import type { OpportunityStatus } from "../scan/lifecycle";
@@ -25,6 +26,7 @@ export type OpportunityRow = {
   condition: string;
   image_url: string | null;
   source_name: string | null;
+  source_url: string | null;
   listed_at: Date;
   ask_pence: number;
   ask_currency: string;
@@ -119,25 +121,33 @@ export async function listOpportunities(f: Filters, opts: { preLiveOnly?: boolea
 
 export async function getOpportunity(id: string) {
   const sql = app();
-  const [o] = await sql<OpportunityRow[]>`select * from kickbuy.opportunities where id = ${id}`;
+  const [o] = await timed("opportunity", sql<OpportunityRow[]>`select * from kickbuy.opportunities where id = ${id}`);
   if (!o) return null;
-  const [snapshots, actions, alerts] = await Promise.all([
+  // One after another: parallel queries through Supabase's pooler stalled.
+  const snapshots = await timed(
+    "price_snapshots",
     sql<{ observed_at: Date; listing_status: string; ask_pence: number; ref_price_pence: number | null; discount_pct: string | null; qualifies: boolean }[]>`
       select observed_at, listing_status, ask_pence, ref_price_pence, discount_pct, qualifies
       from kickbuy.price_snapshots where listing_id = ${o.listing_id}
       order by observed_at desc, id desc limit 50
     `,
+  );
+  const actions = await timed(
+    "user_actions",
     sql<{ at: Date; action: string; email: string | null; detail: Record<string, unknown> }[]>`
       select a.at, a.action, u.email, a.detail
       from kickbuy.user_actions a left join kickbuy.app_users u on u.user_id = a.user_id
       where a.opportunity_id = ${id}
       order by a.at desc limit 50
     `,
+  );
+  const alerts = await timed(
+    "alerts",
     sql<{ created_at: Date; kind: string; ask_pence: number; discount_pct: string }[]>`
       select created_at, kind, ask_pence, discount_pct from kickbuy.alerts
       where opportunity_id = ${id} order by created_at desc
     `,
-  ]);
+  );
   return { opportunity: o, snapshots, actions, alerts };
 }
 

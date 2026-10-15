@@ -3,7 +3,7 @@
 // roles, and runs full and incremental scans.
 //
 //   KICKBUY_TEST_PG=postgres://postgres@localhost:5432 npm run test:integration
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -45,7 +45,9 @@ describe.skipIf(!base)("scan (integration)", () => {
     await kickioOwner.unsafe(file("db/kickio/0001_kickbuy_read_interface.sql"));
     const appOwner = postgres(url("kickbuy_test_app"), { max: 1, onnotice: () => {} });
     await appOwner.unsafe(file("test/kickbuy-stub.sql"));
-    await appOwner.unsafe(file("db/kickbuy/0001_init.sql"));
+    for (const f of readdirSync(path.join(root, "db/kickbuy")).sort()) {
+      await appOwner.unsafe(file(`db/kickbuy/${f}`));
+    }
     await appOwner.end();
 
     await seed(kickioOwner);
@@ -94,6 +96,7 @@ describe.skipIf(!base)("scan (integration)", () => {
       confidence: "high",
       needs_review: false,
       ref_source: "cfs",
+      source_url: "https://kit.example/p/1",
     });
     expect(o5).toMatchObject({ pre_live: false, confidence: "medium", discount_pct: "50.00" });
 

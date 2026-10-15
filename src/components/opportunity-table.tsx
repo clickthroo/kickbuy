@@ -40,7 +40,19 @@ export function OpportunityTable({ rows, empty }: { rows: OpportunityRow[]; empt
                     </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {o.pre_live ? <PreLiveBadge /> : <span className="badge">{listingStatusLabel(o.listing_status, o.prep_status)}</span>}
-                      {o.source_name && <span className="badge">{o.source_name}</span>}
+                      {o.source_url ? (
+                        <a
+                          href={o.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="badge hover:text-foreground hover:underline"
+                          title="Open the source product page"
+                        >
+                          {o.source_name ?? "Source"} ↗
+                        </a>
+                      ) : (
+                        o.source_name && <span className="badge">{o.source_name}</span>
+                      )}
                       <span className="badge">Listed {date(o.listed_at)}</span>
                     </div>
                   </div>
