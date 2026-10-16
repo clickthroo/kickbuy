@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ExternalLink } from "@/components/external-link";
+import { displayImageUrl } from "@/lib/images";
 import type { OpportunityRow } from "@/lib/data/opportunities";
 import { date, money, pct } from "@/lib/format";
 import { listingStatusLabel, saleSourceLabel } from "@/lib/labels";
@@ -25,9 +27,15 @@ export function OpportunityTable({ rows, empty }: { rows: OpportunityRow[]; empt
             <tr key={o.id} className="align-top">
               <td className="min-w-72">
                 <div className="flex gap-3">
-                  {o.image_url ? (
+                  {displayImageUrl(o.image_url) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={o.image_url} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded object-cover" />
+                    <img
+                      src={displayImageUrl(o.image_url)!}
+                      alt=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="h-12 w-12 shrink-0 rounded object-cover"
+                    />
                   ) : (
                     <div className="h-12 w-12 shrink-0 rounded bg-background" />
                   )}
@@ -41,15 +49,13 @@ export function OpportunityTable({ rows, empty }: { rows: OpportunityRow[]; empt
                     <div className="mt-1 flex flex-wrap gap-1">
                       {o.pre_live ? <PreLiveBadge /> : <span className="badge">{listingStatusLabel(o.listing_status, o.prep_status)}</span>}
                       {o.source_url ? (
-                        <a
+                        <ExternalLink
                           href={o.source_url}
-                          target="_blank"
-                          rel="noreferrer"
                           className="badge hover:text-foreground hover:underline"
                           title="Open the source product page"
                         >
                           {o.source_name ?? "Source"} ↗
-                        </a>
+                        </ExternalLink>
                       ) : (
                         o.source_name && <span className="badge">{o.source_name}</span>
                       )}

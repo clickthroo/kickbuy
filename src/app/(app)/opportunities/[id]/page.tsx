@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ExternalLink } from "@/components/external-link";
 import { ConfidenceBadge, PreLiveBadge, StaleBadge, StatusBadge } from "@/components/badges";
 import { hasRole, requireUser } from "@/lib/auth";
 import { getOpportunity } from "@/lib/data/opportunities";
@@ -65,19 +66,19 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             {o.source_name && <span className="text-muted"> · from {o.source_name}</span>}
           </p>
           <div className="flex flex-col gap-2">
-            <a href={kickioListingUrl(o.listing_id)} target="_blank" rel="noreferrer" className="btn btn-secondary justify-center">
+            <ExternalLink href={kickioListingUrl(o.listing_id)} className="btn btn-secondary justify-center">
               Open listing on Kickio ↗
-            </a>
+            </ExternalLink>
             {o.source_url && (
-              <a href={o.source_url} target="_blank" rel="noreferrer" className="btn btn-secondary justify-center">
+              <ExternalLink href={o.source_url} className="btn btn-secondary justify-center">
                 Open source product page{o.source_name ? ` (${o.source_name})` : ""} ↗
-              </a>
+              </ExternalLink>
             )}
             {o.pre_live && (
               <>
-                <a href={kickioReviewQueueUrl()} target="_blank" rel="noreferrer" className="btn btn-secondary justify-center">
+                <ExternalLink href={kickioReviewQueueUrl()} className="btn btn-secondary justify-center">
                   Open Kickio review queue ↗
-                </a>
+                </ExternalLink>
                 <p className="text-xs text-muted">
                   Kickio&apos;s review queue has no per-listing link: find it on the Listings tab. Listing id{" "}
                   <code className="font-mono">{o.listing_id}</code>
@@ -120,9 +121,9 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             <Row k="Match" v={CONFIDENCE_LABELS[o.confidence]} />
           </dl>
           {o.ref_url && (
-            <a href={o.ref_url} target="_blank" rel="noreferrer" className="mt-3 inline-block underline">
+            <ExternalLink href={o.ref_url} className="mt-3 inline-block underline">
               View the sold item ↗
-            </a>
+            </ExternalLink>
           )}
           {o.match_notes.length > 0 && (
             <div className="mt-3 rounded bg-warn-bg p-2 text-xs text-warn">
@@ -166,9 +167,9 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                 </td>
                 <td>
                   {s.url ? (
-                    <a href={s.url} target="_blank" rel="noreferrer" className="underline">
+                    <ExternalLink href={s.url} className="underline">
                       {saleSourceLabel(s.source)}
-                    </a>
+                    </ExternalLink>
                   ) : (
                     saleSourceLabel(s.source)
                   )}

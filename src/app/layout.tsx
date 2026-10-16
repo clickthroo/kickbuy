@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "KickBuy",
   description: "Kickio buying intelligence",
   robots: { index: false, follow: false },
+  // Never tell third-party sites a visitor came from KickBuy.
+  referrer: "no-referrer",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
