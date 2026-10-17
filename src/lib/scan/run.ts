@@ -484,6 +484,7 @@ async function record(
         from jsonb_to_recordset(${tx.json(alerts)})
           as v(listing_id uuid, ask_pence int, ref_price_pence int, discount_pct numeric, kind text)
         join kickbuy.opportunities o on o.listing_id = v.listing_id
+        where o.removed_at is null
         on conflict (listing_id, ask_pence) do nothing
         returning id
       `;

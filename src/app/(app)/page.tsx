@@ -83,7 +83,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
             )}
           </div>
           <p className="text-sm text-muted">Not yet visible to buyers. Open each one in Kickio&apos;s review queue.</p>
-          <OpportunityTable rows={preLive.rows} empty={null} />
+          <OpportunityTable rows={preLive.rows} empty={null} canRemove={hasRole(user, "buyer")} />
         </section>
       )}
 
@@ -98,6 +98,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
         </div>
         <OpportunityTable
           rows={list.rows}
+          canRemove={hasRole(user, "buyer")}
           empty={
             summary.lastRun ? "No opportunities match these filters." : "No scans have run yet. Run the first scan to fill this in."
           }

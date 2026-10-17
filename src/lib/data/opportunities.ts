@@ -64,10 +64,14 @@ export type OpportunityRow = {
   last_changed_at: Date;
   expired_at: Date | null;
   expired_reason: string | null;
+  removed_at: Date | null;
+  removed_reason: string | null;
 };
 
 function whereFor(sql: postgres.Sql, f: Filters, opts: { preLiveOnly?: boolean } = {}) {
   const conds = [
+    // Removed opportunities never show anywhere.
+    sql`removed_at is null`,
     f.status === "open"
       ? sql`status in ('new', 'watching')`
       : f.status === "all"
@@ -158,7 +162,7 @@ export async function dashboardSummary() {
       select count(*)::int as n, sum(saving_pence)::int as saving,
              count(*) filter (where pre_live)::int as prelive,
              count(*) filter (where needs_review)::int as review
-      from kickbuy.opportunities where status in ('new', 'watching')
+      from kickbuy.opportunities where status in ('new', 'watching') and removed_at is null
     `,
     sql<{ status: string; started_at: Date; finished_at: Date | null; kind: string; error: string | null }[]>`
       select status, started_at, finished_at, kind, error from kickbuy.scan_runs
@@ -183,7 +187,7 @@ export async function dashboardSummary() {
 
 export async function refSources(): Promise<string[]> {
   const rows = await app()<{ ref_source: string }[]>`
-    select distinct ref_source from kickbuy.opportunities order by ref_source
+    select distinct ref_source from kickbuy.opportunities where removed_at is null order by ref_source
   `;
   return rows.map((r) => r.ref_source);
 }

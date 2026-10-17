@@ -174,6 +174,18 @@ describe.skipIf(!base)("scan (integration)", () => {
     const [o1] = await db.app`select status from kickbuy.opportunities where listing_id = ${L1}`;
     expect(o1.status).toBe("dismissed"); // 65%, but dismissed at this price
   });
+
+  it("never brings a removed opportunity back, even when its price drops", async () => {
+    await db.app`update kickbuy.opportunities set removed_at = now(), removed_reason = 'test' where listing_id = ${L2}`;
+    const before = await db.app`select count(*)::int as n from kickbuy.alerts where listing_id = ${L2}`;
+    await kickioOwner`update public.listings set price_cents = 5000, updated_at = now() where id = ${L2}`;
+    await runScan(db, { trigger: "manual", forceFull: true });
+    const [o] = await db.app`select removed_at, ask_pence from kickbuy.opportunities where listing_id = ${L2}`;
+    expect(o.removed_at).not.toBeNull();
+    expect(o.ask_pence).toBe(5000); // still tracked, just never shown
+    const after = await db.app`select count(*)::int as n from kickbuy.alerts where listing_id = ${L2}`;
+    expect(after[0].n).toBe(before[0].n);
+  });
 });
 
 async function insert(sql: postgres.Sql, table: string, rows: Record<string, unknown>[]) {

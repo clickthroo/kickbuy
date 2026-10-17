@@ -7,7 +7,8 @@ import { getOpportunity } from "@/lib/data/opportunities";
 import { age, date, dateTime, money, pct } from "@/lib/format";
 import { kickioListingUrl, kickioReviewQueueUrl } from "@/lib/kickio-links";
 import { CONFIDENCE_LABELS, listingStatusLabel, saleSourceLabel } from "@/lib/labels";
-import { setOpportunityStatus } from "../actions";
+import { restoreOpportunity, setOpportunityStatus } from "../actions";
+import { RemoveButton } from "@/components/remove-button";
 
 export default async function OpportunityPage({ params }: PageProps<"/opportunities/[id]">) {
   const user = await requireUser();
@@ -34,6 +35,20 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           <ConfidenceBadge confidence={o.confidence} needsReview={o.needs_review} />
           {o.ref_stale && <StaleBadge />}
         </div>
+        {o.removed_at && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded bg-warn-bg p-2 text-sm text-warn">
+            <span>
+              Removed {dateTime(o.removed_at)}
+              {o.removed_reason ? `: ${o.removed_reason}` : ""}. It isn&apos;t shown anywhere in KickBuy.
+            </span>
+            {canAct && (
+              <form action={restoreOpportunity}>
+                <input type="hidden" name="id" value={o.id} />
+                <button className="btn btn-secondary py-1 text-xs">Restore</button>
+              </form>
+            )}
+          </div>
+        )}
         {o.status === "expired" && (
           <p className="mt-3 rounded bg-warn-bg p-2 text-sm text-warn">
             Expired {dateTime(o.expired_at)}: {o.expired_reason}
@@ -210,10 +225,15 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
               </button>
             )}
           </form>
-          <p className="mt-2 text-xs text-muted">
-            A dismissed opportunity comes back as new only if the price drops below today&apos;s{" "}
-            {money(o.ask_pence, ccy)}.
-          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+            <p className="text-xs text-muted">
+              Dismissed comes back as new if the price drops below today&apos;s {money(o.ask_pence, ccy)}. Removed
+              never comes back.
+            </p>
+            {!o.removed_at && (
+              <RemoveButton id={o.id} title={o.title} from="detail" className="btn btn-secondary text-warn" />
+            )}
+          </div>
         </section>
       )}
 

@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { app } from "@/lib/db";
 
@@ -40,5 +41,47 @@ export async function setOpportunityStatus(form: FormData) {
               ${tx.json({ from: before.status, to: status, askPence: before.ask_pence, note })})
     `;
   });
+  revalidatePath("/", "layout");
+}
+
+// Remove an opportunity for good: it disappears from every list, total and
+// alert, and never comes back (even if the price drops). Restore undoes it.
+export async function removeOpportunity(form: FormData) {
+  const user = await requireUser("buyer");
+  const id = String(form.get("id") ?? "");
+  if (!UUID.test(id)) return;
+  const sql = app();
+  const rows = await sql`
+    update kickbuy.opportunities
+    set removed_at = now(), removed_by = ${user.id}, removed_reason = 'Removed by a person'
+    where id = ${id} and removed_at is null
+    returning id
+  `;
+  if (rows.length) {
+    await sql`
+      insert into kickbuy.user_actions (user_id, action, opportunity_id, detail)
+      values (${user.id}, 'opportunity.remove', ${id}, ${sql.json({})})
+    `;
+  }
+  revalidatePath("/", "layout");
+  if (form.get("from") === "detail") redirect("/");
+}
+
+export async function restoreOpportunity(form: FormData) {
+  const user = await requireUser("buyer");
+  const id = String(form.get("id") ?? "");
+  if (!UUID.test(id)) return;
+  const sql = app();
+  const rows = await sql`
+    update kickbuy.opportunities set removed_at = null, removed_by = null, removed_reason = null
+    where id = ${id} and removed_at is not null
+    returning id
+  `;
+  if (rows.length) {
+    await sql`
+      insert into kickbuy.user_actions (user_id, action, opportunity_id, detail)
+      values (${user.id}, 'opportunity.restore', ${id}, ${sql.json({})})
+    `;
+  }
   revalidatePath("/", "layout");
 }

@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { ExternalLink } from "@/components/external-link";
+import { RemoveButton } from "@/components/remove-button";
 import { displayImageUrl } from "@/lib/images";
 import type { OpportunityRow } from "@/lib/data/opportunities";
 import { date, money, pct } from "@/lib/format";
 import { listingStatusLabel, saleSourceLabel } from "@/lib/labels";
 import { ConfidenceBadge, PreLiveBadge, StaleBadge, StatusBadge } from "./badges";
 
-export function OpportunityTable({ rows, empty }: { rows: OpportunityRow[]; empty: React.ReactNode }) {
+export function OpportunityTable({
+  rows,
+  empty,
+  canRemove = false,
+}: {
+  rows: OpportunityRow[];
+  empty: React.ReactNode;
+  canRemove?: boolean;
+}) {
   if (rows.length === 0) return <div className="card p-6 text-sm text-muted">{empty}</div>;
   return (
     <div className="card overflow-x-auto">
@@ -20,6 +29,7 @@ export function OpportunityTable({ rows, empty }: { rows: OpportunityRow[]; empt
             <th className="num">Saving</th>
             <th>Match</th>
             <th>Status</th>
+            {canRemove && <th className="w-8"><span className="sr-only">Remove</span></th>}
           </tr>
         </thead>
         <tbody>
@@ -80,6 +90,11 @@ export function OpportunityTable({ rows, empty }: { rows: OpportunityRow[]; empt
               <td>
                 <StatusBadge status={o.status} />
               </td>
+              {canRemove && (
+                <td>
+                  <RemoveButton id={o.id} title={o.title} />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

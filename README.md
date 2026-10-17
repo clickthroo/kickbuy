@@ -96,7 +96,16 @@ when the interval in Settings (default 15 min) has passed.
 Opportunity statuses: **New**, **Watching**, **Dismissed** (stays dismissed
 unless the price drops below the dismissed price), **Expired** (the listing
 left the inventory or no longer qualifies; comes back as New if it
-qualifies again). Price changes are kept in `kickbuy.price_snapshots`.
+qualifies again).
+
+**Remove** (the × on each row, or "Remove permanently" on the detail page)
+hides an opportunity for good: it never appears in any list, total or alert
+again, even if its price drops. Scans keep the row up to date so the listing
+isn't re-detected as new. Restore from the detail page if needed.
+
+Only Kickio's **Football Shirts** category is scanned (`kickbuy.inventory`
+view); shorts, jackets, polos and other categories never become
+opportunities. Price changes are kept in `kickbuy.price_snapshots`.
 
 **Alerts** are in-app, once per listing and qualifying price; a further price
 drop alerts again (`unique (listing_id, ask_pence)` plus a "below the lowest
