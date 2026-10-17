@@ -14,7 +14,7 @@ export default async function ScansPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Scans</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Scans</h1>
           <p className="max-w-3xl text-sm text-muted">
             Scans run every {settings.scanIntervalMinutes} minutes. Each one re-checks listings that changed, listings a
             newly recorded sale could value, and every open opportunity. A full scan of the whole inventory runs at least
@@ -28,7 +28,48 @@ export default async function ScansPage() {
           </div>
         )}
       </div>
-      <div className="card overflow-x-auto">
+      <ul className="space-y-3 md:hidden">
+        {runs.map((r) => (
+          <li key={r.id} className="card p-3 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-medium">{dateTime(r.started_at)}</p>
+                <p className="text-xs text-muted">
+                  {r.kind} · {r.trigger === "cron" ? "scheduled" : (r.email ?? "manual")}
+                  {r.duration_ms !== null && ` · ${(r.duration_ms / 1000).toFixed(1)}s`}
+                </p>
+              </div>
+              <span
+                className={r.status === "succeeded" ? "badge badge-good" : r.status === "failed" ? "badge badge-warn" : "badge"}
+              >
+                {r.status}
+              </span>
+            </div>
+            {r.error && <p className="mt-2 text-xs text-warn">{r.error}</p>}
+            <dl className="mt-2 grid grid-cols-4 gap-2 rounded bg-background p-2 text-center">
+              {(
+                [
+                  ["Listings", r.listings_scanned],
+                  ["Priced", r.matched],
+                  ["New", r.opportunities_new],
+                  ["Alerts", r.alerts_created],
+                ] as const
+              ).map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-[0.65rem] uppercase tracking-wide text-muted">{k}</dt>
+                  <dd className="tabular-nums">{n(v)}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-2 text-xs text-muted">
+              {n(r.insufficient_data)} no sales data · {n(r.unmatchable)} can&apos;t match · {n(r.opportunities_expired)}{" "}
+              expired
+            </p>
+          </li>
+        ))}
+        {runs.length === 0 && <li className="card p-6 text-sm text-muted">No scans yet.</li>}
+      </ul>
+      <div className="card hidden overflow-x-auto md:block">
         <table className="table">
           <thead>
             <tr>

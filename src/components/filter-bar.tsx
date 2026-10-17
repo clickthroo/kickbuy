@@ -7,17 +7,17 @@ import { saleSourceLabel } from "@/lib/labels";
 export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
   return (
     <details className="card" open={hasFilters(f)}>
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">
+      <summary className="cursor-pointer select-none px-4 py-3.5 text-sm font-medium sm:py-3">
         Filter and sort
         <span className="ml-2 font-normal text-muted">
           {SORTS[f.sort]}
           {hasFilters(f) && " · filtered"}
         </span>
       </summary>
-    <form method="get" className="grid gap-3 border-t border-border p-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
-      <label className="sm:col-span-2">
+    <form method="get" className="grid grid-cols-2 gap-3 border-t border-border p-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
+      <label className="col-span-2">
         <span className="label">Search title</span>
-        <input name="q" defaultValue={f.q} placeholder="e.g. Umbro 1997" className="input mt-1" />
+        <input name="q" type="search" enterKeyHint="search" defaultValue={f.q} placeholder="e.g. Umbro 1997" className="input mt-1" />
       </label>
       <label>
         <span className="label">Club / country</span>
@@ -46,7 +46,7 @@ export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
           ))}
         </select>
       </label>
-      <label>
+      <label className="col-span-2 sm:col-span-1">
         <span className="label">Opportunity status</span>
         <select name="status" defaultValue={f.status} className="input mt-1">
           {Object.entries(STATUS_FILTERS).map(([k, v]) => (
@@ -56,19 +56,19 @@ export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
           ))}
         </select>
       </label>
-      <div className="flex gap-2">
+      <div className="col-span-2 flex gap-2 sm:col-span-1">
         <label className="flex-1">
           <span className="label">Ask from £</span>
-          <input name="min" type="number" min={0} step="1" defaultValue={f.minPrice ?? ""} className="input mt-1" />
+          <input name="min" type="number" inputMode="numeric" min={0} step="1" defaultValue={f.minPrice ?? ""} className="input mt-1" />
         </label>
         <label className="flex-1">
           <span className="label">to £</span>
-          <input name="max" type="number" min={0} step="1" defaultValue={f.maxPrice ?? ""} className="input mt-1" />
+          <input name="max" type="number" inputMode="numeric" min={0} step="1" defaultValue={f.maxPrice ?? ""} className="input mt-1" />
         </label>
       </div>
       <label>
         <span className="label">Min discount %</span>
-        <input name="disc" type="number" min={0} max={99} step="1" defaultValue={f.minDiscount ?? ""} className="input mt-1" />
+        <input name="disc" type="number" inputMode="numeric" min={0} max={99} step="1" defaultValue={f.minDiscount ?? ""} className="input mt-1" />
       </label>
       <label>
         <span className="label">Confidence</span>
@@ -94,7 +94,7 @@ export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
           ))}
         </select>
       </label>
-      <label>
+      <label className="col-span-2 sm:col-span-1">
         <span className="label">Sort by</span>
         <select name="sort" defaultValue={f.sort} className="input mt-1">
           {Object.entries(SORTS).map(([k, v]) => (
@@ -104,10 +104,10 @@ export function FilterBar({ f, sources }: { f: Filters; sources: string[] }) {
           ))}
         </select>
       </label>
-      <div className="flex items-end gap-2 sm:col-span-3 lg:col-span-6">
-        <button className="btn">Apply</button>
+      <div className="col-span-2 flex items-end gap-2 sm:col-span-3 lg:col-span-6">
+        <button className="btn flex-1 justify-center sm:flex-none">Apply</button>
         {hasFilters(f) && (
-          <Link href="/" className="btn btn-secondary">
+          <Link href="/" className="btn btn-secondary flex-1 justify-center sm:flex-none">
             Clear
           </Link>
         )}

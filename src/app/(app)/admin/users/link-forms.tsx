@@ -20,11 +20,11 @@ export function InviteForm() {
   const [state, action, pending] = useActionState(inviteUser, null);
   return (
     <form action={action} className="flex flex-wrap items-end gap-3 text-sm">
-      <label className="min-w-56 flex-1">
+      <label className="w-full sm:w-auto sm:min-w-56 sm:flex-1">
         Email
         <input name="email" type="email" required className="input mt-1" />
       </label>
-      <label>
+      <label className="w-full sm:w-auto">
         Role
         <select name="role" defaultValue="buyer" className="input mt-1">
           <option value="buyer">Buyer: view, watch and dismiss opportunities, run scans</option>
@@ -32,7 +32,7 @@ export function InviteForm() {
           <option value="owner">Owner: everything, including users</option>
         </select>
       </label>
-      <button className="btn" disabled={pending}>
+      <button className="btn w-full justify-center sm:w-auto" disabled={pending}>
         {pending ? "Creating…" : "Create invite link"}
       </button>
       <LinkNotice state={state} />

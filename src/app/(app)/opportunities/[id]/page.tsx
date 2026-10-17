@@ -23,11 +23,11 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/" className="text-sm text-muted hover:text-foreground">
+        <Link href="/" className="-my-2 inline-block py-2 text-sm text-muted hover:text-foreground">
           ← Opportunities
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{o.title}</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">{o.title}</h1>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           <StatusBadge status={o.status} />
@@ -58,7 +58,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
 
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="card p-4 lg:col-span-2">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
             <Figure label="Asking price" value={money(o.ask_pence, ccy)} />
             <Figure label="Last sold" value={money(o.ref_price_pence, ccy)} note={date(o.ref_sold_at)} />
             <Figure
@@ -81,17 +81,17 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             {o.source_name && <span className="text-muted"> · from {o.source_name}</span>}
           </p>
           <div className="flex flex-col gap-2">
-            <ExternalLink href={kickioListingUrl(o.listing_id)} className="btn btn-secondary justify-center">
+            <ExternalLink href={kickioListingUrl(o.listing_id)} className="btn btn-secondary justify-center text-center">
               Open listing on Kickio ↗
             </ExternalLink>
             {o.source_url && (
-              <ExternalLink href={o.source_url} className="btn btn-secondary justify-center">
+              <ExternalLink href={o.source_url} className="btn btn-secondary justify-center text-center">
                 Open source product page{o.source_name ? ` (${o.source_name})` : ""} ↗
               </ExternalLink>
             )}
             {o.pre_live && (
               <>
-                <ExternalLink href={kickioReviewQueueUrl()} className="btn btn-secondary justify-center">
+                <ExternalLink href={kickioReviewQueueUrl()} className="btn btn-secondary justify-center text-center">
                   Open Kickio review queue ↗
                 </ExternalLink>
                 <p className="text-xs text-muted">
@@ -107,7 +107,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="card p-4 text-sm">
           <h2 className="mb-3 font-medium">This listing</h2>
-          <dl className="grid grid-cols-[9rem_1fr] gap-x-3 gap-y-1.5">
+          <dl className="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
             <Row k="Club / country" v={o.team} />
             <Row k="Season" v={o.season} />
             <Row k="Type" v={o.shirt_type} />
@@ -122,7 +122,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
 
         <div className="card p-4 text-sm">
           <h2 className="mb-3 font-medium">Reference sale</h2>
-          <dl className="grid grid-cols-[9rem_1fr] gap-x-3 gap-y-1.5">
+          <dl className="grid grid-cols-[7.5rem_1fr] gap-x-3 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
             <Row k="Sold for" v={money(o.ref_price_pence, ccy)} />
             {o.ref_fx_rate && (
               <Row
@@ -164,6 +164,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           </span>
         </div>
         <p className="mb-2 text-xs text-muted">For context only: the discount always uses the reference sale above.</p>
+        <div className="overflow-x-auto">
         <table className="table">
           <thead>
             <tr>
@@ -198,6 +199,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       {canAct && o.status !== "expired" && (
@@ -205,22 +207,22 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           <h2 className="mb-3 font-medium">Follow up</h2>
           <form action={setOpportunityStatus} className="flex flex-wrap items-end gap-2 text-sm">
             <input type="hidden" name="id" value={o.id} />
-            <label className="min-w-64 flex-1">
+            <label className="w-full sm:w-auto sm:min-w-64 sm:flex-1">
               <span className="label">Note (optional)</span>
               <input name="note" maxLength={500} className="input mt-1" />
             </label>
             {o.status !== "watching" && (
-              <button name="action" value="watch" className="btn">
+              <button name="action" value="watch" className="btn flex-1 justify-center sm:flex-none">
                 Watch
               </button>
             )}
             {o.status !== "dismissed" && (
-              <button name="action" value="dismiss" className="btn btn-secondary">
+              <button name="action" value="dismiss" className="btn btn-secondary flex-1 justify-center sm:flex-none">
                 Dismiss
               </button>
             )}
             {o.status !== "new" && (
-              <button name="action" value="reopen" className="btn btn-secondary">
+              <button name="action" value="reopen" className="btn btn-secondary flex-1 justify-center sm:flex-none">
                 Back to new
               </button>
             )}
@@ -231,7 +233,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
               never comes back.
             </p>
             {!o.removed_at && (
-              <RemoveButton id={o.id} title={o.title} from="detail" className="btn btn-secondary text-warn" />
+              <RemoveButton id={o.id} title={o.title} from="detail" className="btn btn-secondary text-warn!" />
             )}
           </div>
         </section>
@@ -243,6 +245,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           {snapshots.length === 0 ? (
             <p className="text-muted">No changes recorded yet.</p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
@@ -266,6 +269,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
         <div className="card p-4 text-sm">
@@ -284,8 +288,8 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             ]
               .sort((a, b) => b.at.getTime() - a.at.getTime())
               .map((e, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="w-36 shrink-0 text-muted">{dateTime(e.at)}</span>
+                <li key={i} className="flex flex-col sm:flex-row sm:gap-3">
+                  <span className="shrink-0 text-xs text-muted sm:w-36 sm:text-sm">{dateTime(e.at)}</span>
                   <span>{e.text}</span>
                 </li>
               ))}
@@ -306,9 +310,9 @@ const ACTION_LABELS: Record<string, string> = {
 function Figure({ label, value, note, strong }: { label: string; value: string; note?: string; strong?: boolean }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-      <p className={`mt-1 text-3xl font-semibold tabular-nums ${strong ? "text-good" : ""}`}>{value}</p>
-      {note && <p className="text-sm text-muted">{note}</p>}
+      <p className="text-[0.65rem] font-medium uppercase tracking-wide text-muted sm:text-xs">{label}</p>
+      <p className={`mt-1 text-xl font-semibold tabular-nums sm:text-3xl ${strong ? "text-good" : ""}`}>{value}</p>
+      {note && <p className="text-xs text-muted sm:text-sm">{note}</p>}
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Buying opportunities</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Buying opportunities</h1>
           <p className="text-sm text-muted">
             Kickio listings priced below the last sale of the same shirt in the same condition. Read-only: KickBuy
             never changes a listing.
@@ -52,7 +52,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
         </div>
       </div>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label="Open opportunities" value={summary.openCount.toLocaleString("en-GB")} />
         <Kpi label="Potential savings" value={money(summary.openSavingPence)} />
         <Kpi
@@ -71,7 +71,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
 
       {preLive && f.listing !== "prelive" && preLive.total > 0 && (
         <section className="space-y-2">
-          <div className="flex items-baseline justify-between">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h2 className="text-lg font-semibold">
               <span className="badge badge-prelive mr-2 align-middle">Pre-live</span>
               In Kickio&apos;s review queue
@@ -104,7 +104,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
           }
         />
         {pages > 1 && (
-          <nav className="flex items-center justify-between text-sm">
+          <nav className="flex items-center justify-between gap-2 text-sm">
             {f.page > 1 ? (
               <Link href={`/${filtersToQuery(f, { page: f.page - 1 })}`} className="btn btn-secondary">
                 Previous
@@ -132,16 +132,16 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
 function Kpi({ label, value, note, href }: { label: string; value: string; note?: string; href?: string }) {
   const body = (
     <>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
+      <p className="text-[0.68rem] font-medium uppercase tracking-wide text-muted sm:text-xs">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums sm:text-3xl">{value}</p>
       {note && <p className="mt-1 text-xs text-muted">{note}</p>}
     </>
   );
   return href ? (
-    <Link href={href} className="card block p-4 hover:border-accent">
+    <Link href={href} className="card block p-3 hover:border-accent sm:p-4">
       {body}
     </Link>
   ) : (
-    <div className="card p-4">{body}</div>
+    <div className="card p-3 sm:p-4">{body}</div>
   );
 }

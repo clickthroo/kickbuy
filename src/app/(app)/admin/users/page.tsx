@@ -17,7 +17,7 @@ export default async function UsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Users</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">Users</h1>
         <p className="text-sm text-muted">
           Everyone signs in with a password and an authenticator app. Only people listed here can get in.
         </p>
@@ -27,22 +27,22 @@ export default async function UsersPage() {
         <InviteForm />
       </section>
       <section className="card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+        <table className="block w-full text-sm md:table">
+          <thead className="hidden border-b border-border text-left text-xs uppercase tracking-wide text-muted md:table-header-group">
             <tr>
               <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2">Role & access</th>
               <th className="px-3 py-2">Login</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block md:table-row-group">
             {users.map((u) => (
-              <tr key={u.user_id} className="border-b border-border align-top last:border-0">
-                <td className="px-3 py-2">
+              <tr key={u.user_id} className="block border-b border-border py-2 align-top last:border-0 md:table-row md:py-0">
+                <td className="block px-3 py-1 font-medium md:table-cell md:py-2 md:font-normal">
                   {u.email}
                   {u.user_id === me.id && <span className="ml-2 text-xs text-muted">(you)</span>}
                 </td>
-                <td className="px-3 py-2">
+                <td className="block px-3 py-1 md:table-cell md:py-2">
                   <form action={updateUser} className="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="userId" value={u.user_id} />
                     <select name="role" defaultValue={u.role} className="input w-auto py-1" disabled={u.user_id === me.id}>
@@ -57,24 +57,24 @@ export default async function UsersPage() {
                     {u.user_id !== me.id && <button className="btn btn-secondary py-1 text-xs">Save</button>}
                   </form>
                 </td>
-                <td className="px-3 py-2">{u.user_id !== me.id && <ResetLoginForm userId={u.user_id} />}</td>
+                <td className="block px-3 py-1 md:table-cell md:py-2">{u.user_id !== me.id && <ResetLoginForm userId={u.user_id} />}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
-      <section className="card overflow-x-auto p-4">
+      <section className="card p-4 md:overflow-x-auto">
         <h2 className="mb-2 font-medium">Recent activity</h2>
-        <table className="w-full text-xs">
-          <tbody>
+        <table className="block w-full text-xs md:table">
+          <tbody className="block md:table-row-group">
             {recent.map((a, i) => (
-              <tr key={i} className="border-b border-border last:border-0">
-                <td className="py-1 pr-3 whitespace-nowrap text-muted">
+              <tr key={i} className="flex flex-wrap gap-x-3 border-b border-border py-1.5 last:border-0 md:table-row md:py-0">
+                <td className="py-1 whitespace-nowrap text-muted md:pr-3">
                   {a.at.toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/London" })}
                 </td>
-                <td className="py-1 pr-3">{a.email ?? "—"}</td>
-                <td className="py-1 pr-3 font-mono">{a.action}</td>
-                <td className="py-1 font-mono text-muted">{JSON.stringify(a.detail)}</td>
+                <td className="py-1 md:pr-3">{a.email ?? "—"}</td>
+                <td className="py-1 font-mono md:pr-3">{a.action}</td>
+                <td className="w-full py-1 font-mono break-all text-muted md:w-auto">{JSON.stringify(a.detail)}</td>
               </tr>
             ))}
           </tbody>

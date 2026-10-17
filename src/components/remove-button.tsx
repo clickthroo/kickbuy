@@ -16,14 +16,14 @@ export function RemoveButton({ id, title, from, className }: { id: string; title
       <input type="hidden" name="id" value={id} />
       {from && <input type="hidden" name="from" value={from} />}
       <button
-        className={className ?? "rounded p-1 text-muted hover:bg-warn-bg hover:text-warn"}
+        className={className ?? "inline-flex h-9 w-9 items-center justify-center rounded text-muted hover:bg-warn-bg hover:text-warn md:h-7 md:w-7"}
         aria-label={`Remove ${title} permanently`}
         title="Remove permanently"
       >
         {from ? (
           "Remove permanently"
         ) : (
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 md:h-4 md:w-4" aria-hidden="true">
             <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
           </svg>
         )}

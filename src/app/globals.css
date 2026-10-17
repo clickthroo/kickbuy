@@ -52,7 +52,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
+  overflow-wrap: anywhere;
+  -webkit-tap-highlight-color: transparent;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
@@ -75,6 +82,13 @@ body {
   background: var(--accent);
   color: var(--accent-fg);
 }
+/* Comfortable tap targets on touch screens. */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 2.75rem;
+    padding-inline: 1rem;
+  }
+}
 .btn:disabled {
   opacity: 0.6;
 }
@@ -91,6 +105,13 @@ body {
   background: var(--surface);
   padding: 0.4rem 0.6rem;
   font-size: 0.875rem;
+}
+/* 16px stops iOS Safari zooming the page when a field is focused. */
+@media (pointer: coarse) {
+  .input {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
 }
 
 .card {
@@ -139,6 +160,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+}
+.table td {
+  overflow-wrap: normal;
 }
 .table th,
 .table td {

@@ -15,7 +15,7 @@ export default async function AlertsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Alerts</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">Alerts</h1>
           <p className="text-sm text-muted">
             One alert per listing and price. A listing alerts again only if its price drops further.
           </p>
@@ -29,7 +29,38 @@ export default async function AlertsPage() {
       {alerts.length === 0 ? (
         <div className="card p-6 text-sm text-muted">No alerts yet.</div>
       ) : (
-        <div className="card overflow-x-auto">
+        <>
+        <ul className="space-y-3 md:hidden">
+          {alerts.map((a) => (
+            <li key={a.id} className={`card relative p-3 ${a.read ? "text-muted" : ""}`}>
+              <div className="flex items-start justify-between gap-3 text-xs text-muted">
+                <span>
+                  {!a.read && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-good" aria-label="unread" />}
+                  {dateTime(a.created_at)}
+                </span>
+                <StatusBadge status={a.status as OpportunityStatus} />
+              </div>
+              <Link
+                href={`/opportunities/${a.opportunity_id}`}
+                className={`mt-1 block leading-snug after:absolute after:inset-0 ${a.read ? "" : "font-medium"}`}
+              >
+                {a.title}
+              </Link>
+              <p className="mt-1 text-sm tabular-nums">
+                {money(a.ask_pence, a.ask_currency)} vs {money(a.ref_price_pence, a.ask_currency)} ·{" "}
+                <span className="font-semibold text-good">{pct(a.discount_pct)} below</span>
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                <span className="badge">{a.kind === "new" ? "New opportunity" : "Price dropped"}</span>
+                {a.pre_live && <PreLiveBadge />}
+                {a.current_ask_pence !== a.ask_pence && a.status !== "expired" && (
+                  <span className="badge">now {money(a.current_ask_pence, a.ask_currency)}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="card hidden overflow-x-auto md:block">
           <table className="table">
             <thead>
               <tr>
@@ -71,6 +102,7 @@ export default async function AlertsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

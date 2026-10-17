@@ -110,7 +110,7 @@ export function SettingsForm({ canEdit, settings, sources }: Props) {
             All sources
           </label>
           {!allSources && (
-            <div className="grid gap-1 pl-6 sm:grid-cols-2">
+            <div className="grid gap-1 pl-6 sm:grid-cols-2 [&_label]:min-h-9">
               {sources.map((s) => (
                 <label key={s.value} className="flex items-center gap-2">
                   <input
@@ -128,8 +128,8 @@ export function SettingsForm({ canEdit, settings, sources }: Props) {
       </fieldset>
 
       {canEdit ? (
-        <div className="flex items-center gap-3">
-          <button className="btn" disabled={pending}>
+        <div className="flex flex-wrap items-center gap-3">
+          <button className="btn w-full justify-center sm:w-auto" disabled={pending}>
             {pending ? "Saving…" : "Save settings"}
           </button>
           {state && <span className={`text-sm ${state.ok ? "text-muted" : "text-warn"}`}>{state.message}</span>}

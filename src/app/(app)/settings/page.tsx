@@ -21,7 +21,7 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">Settings</h1>
         <p className="text-sm text-muted">Last changed {dateTime(settings.updatedAt)}.</p>
       </div>
       <SettingsForm
