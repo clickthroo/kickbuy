@@ -235,8 +235,43 @@ async function scan(
     else stats.unmatchable += 1;
   }
 
-  await record(db.app, runId, settings, now, evaluations, existing, checkedIds, stats);
+  const gone = await whyGone(
+    db.kickio,
+    [...checkedIds].filter((id) => !evaluations.has(id)),
+  );
+  await record(db.app, runId, settings, now, evaluations, existing, checkedIds, stats, gone);
   return { ...stats, watermark };
+}
+
+export const SHIRT_CATEGORY = "Football Shirts";
+
+export type GoneReason = { reason: string; remove: boolean };
+
+// For opportunities whose listing has left the inventory: why it left.
+// Moving out of Football Shirts removes the opportunity for good; anything
+// else expires it with the real reason.
+async function whyGone(sql: postgres.Sql, listingIds: string[]): Promise<Map<string, GoneReason>> {
+  const out = new Map<string, GoneReason>();
+  for (let i = 0; i < listingIds.length; i += 1000) {
+    const rows = await sql<{ listing_id: string; status: string; category: string | null; deleted: boolean }[]>`
+      select listing_id, status, category, deleted from kickbuy.listing_states
+      where listing_id = any(${listingIds.slice(i, i + 1000)}::uuid[])
+    `;
+    for (const r of rows) out.set(r.listing_id, goneReason(r));
+  }
+  return out;
+}
+
+export function goneReason(r: { status: string; category: string | null; deleted: boolean }): GoneReason {
+  if (r.category !== SHIRT_CATEGORY) {
+    return { reason: `Not a football shirt: moved to "${r.category ?? "no category"}" on Kickio`, remove: true };
+  }
+  if (r.deleted) return { reason: "Deleted from Kickio", remove: false };
+  if (r.status === "sold") return { reason: "Sold on Kickio", remove: false };
+  if (r.status === "removed") return { reason: "Removed from Kickio", remove: false };
+  if (r.status === "cancelled") return { reason: "Cancelled on Kickio", remove: false };
+  if (r.status === "draft") return { reason: "Moved back to draft on Kickio", remove: false };
+  return { reason: "Listing is no longer available", remove: false };
 }
 
 async function loadFx(db: Databases): Promise<FxLookup> {
@@ -347,6 +382,7 @@ async function record(
   existing: Map<string, ExistingOpportunity>,
   checkedIds: Set<string>,
   stats: ScanStats,
+  gone: Map<string, GoneReason>,
 ) {
   const alerted = new Map(
     (
@@ -402,7 +438,10 @@ async function record(
     if (!d.write) continue;
     if (d.status === "expired") {
       if (prior?.status !== "expired") stats.opportunitiesExpired += 1;
-      expiries.push({ listing_id: listingId, reason: d.expiredReason ?? "Expired" });
+      expiries.push({
+        listing_id: listingId,
+        reason: (evaluation === null && gone.get(listingId)?.reason) || d.expiredReason || "Expired",
+      });
       // Keep the latest prices on the expired row when we still have them.
       if (evaluation?.kind !== "priced" || !entry) continue;
     } else if (!prior || prior.status === "expired") {
@@ -476,6 +515,15 @@ async function record(
     }
     for (let i = 0; i < snapshots.length; i += 1000) {
       await tx`insert into kickbuy.price_snapshots ${tx(snapshots.slice(i, i + 1000))}`;
+    }
+    const removals = [...gone.entries()].filter(([, g]) => g.remove);
+    if (removals.length) {
+      const rows = removals.map(([listing_id, g]) => ({ listing_id, reason: g.reason }));
+      await tx`
+        update kickbuy.opportunities o set removed_at = ${now}, removed_reason = v.reason
+        from (select * from jsonb_to_recordset(${tx.json(rows)}) as x(listing_id uuid, reason text)) v
+        where o.listing_id = v.listing_id and o.removed_at is null
+      `;
     }
     if (alerts.length) {
       const created = await tx<{ id: string }[]>`

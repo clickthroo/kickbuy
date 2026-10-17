@@ -96,7 +96,9 @@ when the interval in Settings (default 15 min) has passed.
 Opportunity statuses: **New**, **Watching**, **Dismissed** (stays dismissed
 unless the price drops below the dismissed price), **Expired** (the listing
 left the inventory or no longer qualifies; comes back as New if it
-qualifies again).
+qualifies again). The expiry reason says why: sold, removed, deleted or
+cancelled on Kickio, back in draft, or no longer below the reference
+(`kickbuy.listing_states` view).
 
 **Remove** (the × on each row, or "Remove permanently" on the detail page)
 hides an opportunity for good: it never appears in any list, total or alert
@@ -105,7 +107,9 @@ isn't re-detected as new. Restore from the detail page if needed.
 
 Only Kickio's **Football Shirts** category is scanned (`kickbuy.inventory`
 view); shorts, jackets, polos and other categories never become
-opportunities. Price changes are kept in `kickbuy.price_snapshots`.
+opportunities. A listing that is moved out of Football Shirts on Kickio
+is removed from KickBuy automatically at the next scan, as if someone had
+pressed Remove. Price changes are kept in `kickbuy.price_snapshots`.
 
 **Alerts** are in-app, once per listing and qualifying price; a further price
 drop alerts again (`unique (listing_id, ask_pence)` plus a "below the lowest
@@ -132,8 +136,8 @@ KICKBUY_TEST_PG=postgres://postgres@localhost:5432/postgres npm run test:integra
 
 ## Setting up
 
-1. Apply `db/kickio/0001_kickbuy_read_interface.sql` to Kickio and
-   `db/kickbuy/0001_init.sql` to the KickBuy project; set both role
+1. Apply the migrations in `db/kickio/` to Kickio and those in
+   `db/kickbuy/` to the KickBuy project, in order; set both role
    passwords (`db/README.md`).
 2. Create the Vercel project with the variables in `.env.example`
    (`CRON_SECRET` enables the scheduled scan).

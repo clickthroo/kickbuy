@@ -70,3 +70,18 @@ describe("decide on already-expired opportunities", () => {
     expect(decide(expired, priced(9900, false), 8000, true).write).toBe(false);
   });
 });
+
+describe("goneReason", () => {
+  it("removes listings moved out of Football Shirts and names other exits", async () => {
+    const { goneReason } = await import("./run");
+    expect(goneReason({ status: "active", category: "Shorts", deleted: false })).toEqual({
+      reason: 'Not a football shirt: moved to "Shorts" on Kickio',
+      remove: true,
+    });
+    expect(goneReason({ status: "sold", category: "Football Shirts", deleted: false })).toEqual({
+      reason: "Sold on Kickio",
+      remove: false,
+    });
+    expect(goneReason({ status: "active", category: "Football Shirts", deleted: true }).reason).toBe("Deleted from Kickio");
+  });
+});

@@ -43,7 +43,9 @@ describe.skipIf(!base)("scan (integration)", () => {
     }
     kickioOwner = postgres(url("kickbuy_test_kickio"), { max: 1, onnotice: () => {} });
     await kickioOwner.unsafe(file("test/kickio-stub.sql"));
-    await kickioOwner.unsafe(file("db/kickio/0001_kickbuy_read_interface.sql"));
+    for (const f of readdirSync(path.join(root, "db/kickio")).sort()) {
+      await kickioOwner.unsafe(file(`db/kickio/${f}`));
+    }
     const appOwner = postgres(url("kickbuy_test_app"), { max: 1, onnotice: () => {} });
     await appOwner.unsafe(file("test/kickbuy-stub.sql"));
     for (const f of readdirSync(path.join(root, "db/kickbuy")).sort()) {
@@ -139,7 +141,7 @@ describe.skipIf(!base)("scan (integration)", () => {
     // L1 now references the newer Kickio sale.
     expect(opps[L1]).toMatchObject({ status: "new", ask_pence: 7000, ref_price_pence: 20000 });
     expect(opps[L2]).toMatchObject({ status: "new", ask_pence: 11000 });
-    expect(opps[L5]).toMatchObject({ status: "expired", expired_reason: "Listing is no longer available" });
+    expect(opps[L5]).toMatchObject({ status: "expired", expired_reason: "Removed from Kickio" });
 
     const alerts = await db.app`select listing_id, kind, ask_pence from kickbuy.alerts order by created_at, listing_id`;
     expect(alerts.slice(2)).toEqual([
@@ -185,6 +187,27 @@ describe.skipIf(!base)("scan (integration)", () => {
     expect(o.ask_pence).toBe(5000); // still tracked, just never shown
     const after = await db.app`select count(*)::int as n from kickbuy.alerts where listing_id = ${L2}`;
     expect(after[0].n).toBe(before[0].n);
+  });
+
+  it("explains why an opportunity left, and removes ones that are no longer shirts", async () => {
+    const L8 = "20000000-0000-0000-0000-000000000008";
+    await kickioOwner`
+      insert into public.listings (id, title, product_id, size, condition, status, price_cents, updated_at)
+      values (${L8}, 'Shirt', ${P_UTD}, 'L', 'Very Good', 'active', 4000, now())
+    `;
+    await runScan(db, { trigger: "manual" });
+    const [fresh] = await db.app`select status from kickbuy.opportunities where listing_id = ${L8}`;
+    expect(fresh.status).toBe("new");
+
+    await kickioOwner`update public.listings set category = 'Shorts', updated_at = now() where id = ${L8}`;
+    await kickioOwner`update public.listings set status = 'sold', updated_at = now() where id = ${L1}`;
+    await runScan(db, { trigger: "manual" });
+
+    const [moved] = await db.app`select removed_at, removed_reason from kickbuy.opportunities where listing_id = ${L8}`;
+    expect(moved.removed_at).not.toBeNull();
+    expect(moved.removed_reason).toBe('Not a football shirt: moved to "Shorts" on Kickio');
+    const [sold] = await db.app`select status, expired_reason, removed_at from kickbuy.opportunities where listing_id = ${L1}`;
+    expect(sold).toMatchObject({ status: "expired", expired_reason: "Sold on Kickio", removed_at: null });
   });
 });
 
