@@ -209,6 +209,28 @@ describe.skipIf(!base)("scan (integration)", () => {
     const [sold] = await db.app`select status, expired_reason, removed_at from kickbuy.opportunities where listing_id = ${L1}`;
     expect(sold).toMatchObject({ status: "expired", expired_reason: "Sold on Kickio", removed_at: null });
   });
+
+  it("removes items filed as shirts whose source listing is something else", async () => {
+    const L9 = "20000000-0000-0000-0000-000000000011";
+    const L10 = "20000000-0000-0000-0000-000000000012";
+    await kickioOwner`
+      insert into public.listings (id, title, product_id, size, condition, status, price_cents, source_url, updated_at)
+      values (${L9}, 'Shirt', ${P_UTD}, 'L', 'Very Good', 'active', 4000, 'https://shop.example/1997-98-man-utd-home-shirt-l', now()),
+             (${L10}, 'Shirt', ${P_UTD}, 'L', 'Very Good', 'active', 4000, 'https://shop.example/1997-98-man-utd-home-shorts-l', now())
+    `;
+    await runScan(db, { trigger: "manual" });
+    const before = await db.app`select listing_id from kickbuy.opportunities where listing_id in (${L9}, ${L10})`;
+    expect(before.map((r) => r.listing_id)).toEqual([L9]);
+
+    await kickioOwner`
+      update public.listings set source_url = 'https://shop.example/1997-98-man-utd-training-top-l', updated_at = now()
+      where id = ${L9}
+    `;
+    await runScan(db, { trigger: "manual" });
+    const [after] = await db.app`select removed_at, removed_reason from kickbuy.opportunities where listing_id = ${L9}`;
+    expect(after.removed_at).not.toBeNull();
+    expect(after.removed_reason).toBe('Not a football shirt: the source listing is "training-top"');
+  });
 });
 
 async function insert(sql: postgres.Sql, table: string, rows: Record<string, unknown>[]) {

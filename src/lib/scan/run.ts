@@ -15,6 +15,7 @@
 import type postgres from "postgres";
 import { evaluateListing, type Evaluation, SalesIndex } from "../engine/evaluate";
 import { norm } from "../engine/normalise";
+import { notAFootballShirt } from "../engine/scope";
 import type { FxLookup, InventoryRow, SaleRow } from "../engine/types";
 import { type AppSettings, loadSettings } from "../settings";
 import { decide, type ExistingOpportunity } from "./lifecycle";
@@ -215,13 +216,27 @@ async function scan(
     checkedIds = new Set(open);
   }
 
+  // Items filed under Football Shirts that aren't one are never valued, and
+  // any opportunity already raised for one is removed for good.
+  const listingsScanned = listings.length;
+  const notShirts = new Map<string, GoneReason>();
+  listings = listings.filter((l) => {
+    const reason = notAFootballShirt(l.source_url);
+    if (!reason) return true;
+    if (existing.has(l.listing_id)) {
+      notShirts.set(l.listing_id, { reason, remove: true });
+      checkedIds.add(l.listing_id);
+    }
+    return false;
+  });
+
   const evaluations = new Map<string, { listing: InventoryRow; evaluation: Evaluation }>();
   const stats = {
-    listingsScanned: listings.length,
+    listingsScanned,
     salesLoaded: sales.length,
     matched: 0,
     insufficientData: 0,
-    unmatchable: 0,
+    unmatchable: listingsScanned - listings.length,
     opportunitiesNew: 0,
     opportunitiesUpdated: 0,
     opportunitiesExpired: 0,
@@ -237,8 +252,9 @@ async function scan(
 
   const gone = await whyGone(
     db.kickio,
-    [...checkedIds].filter((id) => !evaluations.has(id)),
+    [...checkedIds].filter((id) => !evaluations.has(id) && !notShirts.has(id)),
   );
+  for (const [id, g] of notShirts) gone.set(id, g);
   await record(db.app, runId, settings, now, evaluations, existing, checkedIds, stats, gone);
   return { ...stats, watermark };
 }
