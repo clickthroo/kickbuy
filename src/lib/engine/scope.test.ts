@@ -143,6 +143,16 @@ describe("outsideSettings", () => {
     expect(outsideSettings({ size: "XXL (2XL)", condition: "Good" }, settings)).toMatch(/XXL/);
   });
 
+  it("leaves out excluded shops, ignoring stray spaces", () => {
+    const s = { ...settings, excludedListingSources: ["Classic Football Shirts", "Retro shirts"] };
+    expect(outsideSettings({ size: "L", condition: "Good", source_name: "Classic Football Shirts" }, s)).toBe(
+      "Outside your settings: listed by Classic Football Shirts",
+    );
+    expect(outsideSettings({ size: "L", condition: "Good", source_name: "Retro shirts " }, s)).toMatch(/Retro shirts/);
+    expect(outsideSettings({ size: "L", condition: "Good", source_name: "TheKitMan" }, s)).toBeNull();
+    expect(outsideSettings({ size: "L", condition: "Good", source_name: null }, s)).toBeNull();
+  });
+
   it("applies no restriction when the settings are cleared", () => {
     expect(outsideSettings({ size: "XS Kids", condition: "Needs Attention" }, { listingSizes: null, worstCondition: null })).toBeNull();
   });

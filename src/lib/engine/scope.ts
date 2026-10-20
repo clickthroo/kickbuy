@@ -71,9 +71,13 @@ export const LISTING_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
 // value, or null when it's in scope. A size we can't read, or a kids' size,
 // is out whenever sizes are restricted.
 export function outsideSettings(
-  listing: { size: string | null; condition: string | null },
-  settings: Pick<Settings, "listingSizes" | "worstCondition">,
+  listing: { size: string | null; condition: string | null; source_name?: string | null },
+  settings: Pick<Settings, "listingSizes" | "worstCondition"> & Partial<Pick<Settings, "excludedListingSources">>,
 ): string | null {
+  const shop = listing.source_name?.trim();
+  if (shop && settings.excludedListingSources?.some((s) => s.trim() === shop)) {
+    return `Outside your settings: listed by ${shop}`;
+  }
   if (settings.worstCondition) {
     const c = canonicalCondition(listing.condition);
     const worst = CONDITIONS.indexOf(settings.worstCondition as (typeof CONDITIONS)[number]);

@@ -21,6 +21,10 @@ export async function saveSettings(_prev: SettingsResult, form: FormData): Promi
   const allSizes = form.get("all_sizes") === "on";
   const worstRaw = String(form.get("worst_condition") ?? "any");
   const worst = (CONDITIONS as readonly string[]).includes(worstRaw) ? worstRaw : null;
+  // Every shop the form showed, less the ticked ones, is excluded.
+  const shopName = (v: FormDataEntryValue) => String(v).trim().slice(0, 100);
+  const included = new Set(form.getAll("listing_shops").map(shopName));
+  const excludedShops = [...new Set(form.getAll("listing_shops_known").map(shopName))].filter((s) => s && !included.has(s));
 
   if (!(minDiscount >= 1 && minDiscount <= 95)) return { ok: false, message: "Discount threshold must be 1–95%." };
   if (maxAge !== null && !(Number.isInteger(maxAge) && maxAge >= 1 && maxAge <= 120))
@@ -35,7 +39,8 @@ export async function saveSettings(_prev: SettingsResult, form: FormData): Promi
       min_discount_pct = ${minDiscount}, max_sale_age_months = ${maxAge}, scan_interval_minutes = ${interval},
       require_exact_size = ${exactSize}, alerts_enabled = ${alerts},
       sale_sources = ${allSources ? null : sources}, listing_sizes = ${allSizes ? null : sizes},
-      worst_condition = ${worst}, updated_at = now(), updated_by = ${user.id}
+      worst_condition = ${worst}, excluded_listing_sources = ${excludedShops},
+      updated_at = now(), updated_by = ${user.id}
     where id = 1
     returning *
   `;

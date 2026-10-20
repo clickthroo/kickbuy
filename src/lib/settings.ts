@@ -16,6 +16,7 @@ type Row = {
   sale_sources: string[] | null;
   listing_sizes: string[] | null;
   worst_condition: string | null;
+  excluded_listing_sources: string[] | null;
   updated_at: Date;
 };
 
@@ -29,6 +30,7 @@ export async function loadSettings(sql: postgres.Sql): Promise<AppSettings> {
     saleSources: r.sale_sources && r.sale_sources.length > 0 ? r.sale_sources : null,
     listingSizes: r.listing_sizes && r.listing_sizes.length > 0 ? r.listing_sizes : null,
     worstCondition: r.worst_condition,
+    excludedListingSources: r.excluded_listing_sources ?? [],
     scanIntervalMinutes: r.scan_interval_minutes,
     alertsEnabled: r.alerts_enabled,
     updatedAt: r.updated_at,

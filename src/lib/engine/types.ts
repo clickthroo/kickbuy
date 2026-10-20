@@ -62,4 +62,6 @@ export type Settings = {
   // Which listings are valued at all; null = no restriction.
   listingSizes: string[] | null;
   worstCondition: string | null;
+  // Shops/sellers (Kickio scrape source names) whose listings are ignored.
+  excludedListingSources: string[];
 };

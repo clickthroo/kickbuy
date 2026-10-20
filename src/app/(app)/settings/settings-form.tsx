@@ -15,11 +15,13 @@ type Props = {
     saleSources: string[] | null;
     listingSizes: string[] | null;
     worstCondition: string | null;
+    excludedListingSources: string[];
   };
   sources: { value: string; label: string; count: number }[];
+  shops: { name: string; count: number }[];
 };
 
-export function SettingsForm({ canEdit, settings, sources }: Props) {
+export function SettingsForm({ canEdit, settings, sources, shops }: Props) {
   const [state, action, pending] = useActionState(saveSettings, null);
   const [threshold, setThreshold] = useState(settings.minDiscountPct);
   const [allSources, setAllSources] = useState(settings.saleSources === null);
@@ -89,6 +91,26 @@ export function SettingsForm({ canEdit, settings, sources }: Props) {
             {!allSizes && (
               <p className="text-xs text-muted">Adult sizes only. Listings with no readable size are left out.</p>
             )}
+          </fieldset>
+          <fieldset className="space-y-1">
+            <legend className="mb-1 font-medium">Shops and sellers to include</legend>
+            <p className="mb-2 text-xs text-muted">
+              Untick a shop to ignore its listings. Listings from Kickio&apos;s own sellers are always included.
+            </p>
+            <div className="grid gap-1 sm:grid-cols-2">
+              {shops.map((s) => (
+                <label key={s.name} className="flex min-h-9 items-center gap-2">
+                  <input type="hidden" name="listing_shops_known" value={s.name} />
+                  <input
+                    type="checkbox"
+                    name="listing_shops"
+                    value={s.name}
+                    defaultChecked={!settings.excludedListingSources.some((x) => x.trim() === s.name)}
+                  />
+                  {s.name} <span className="text-xs text-muted">({s.count.toLocaleString("en-GB")})</span>
+                </label>
+              ))}
+            </div>
           </fieldset>
           <label className="block">
             <span className="font-medium">Worst condition to include</span>

@@ -4,7 +4,7 @@ import { listing, sale } from "./fixtures";
 import type { FxLookup, SaleRow, Settings } from "./types";
 
 const asOf = new Date("2026-10-15T12:00:00Z");
-const settings: Settings = { minDiscountPct: 20, maxSaleAgeMonths: 12, requireExactSize: false, saleSources: null, listingSizes: null, worstCondition: null };
+const settings: Settings = { minDiscountPct: 20, maxSaleAgeMonths: 12, requireExactSize: false, saleSources: null, listingSizes: null, worstCondition: null, excludedListingSources: [] };
 const noTeams = () => null;
 const noFx: FxLookup = () => null;
 

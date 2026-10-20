@@ -146,6 +146,7 @@ function settingsSnapshot(s: AppSettings) {
     saleSources: s.saleSources,
     listingSizes: s.listingSizes,
     worstCondition: s.worstCondition,
+    excludedListingSources: s.excludedListingSources,
     alertsEnabled: s.alertsEnabled,
   };
 }
