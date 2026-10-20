@@ -105,6 +105,11 @@ hides an opportunity for good: it never appears in any list, total or alert
 again, even if its price drops. Scans keep the row up to date so the listing
 isn't re-detected as new. Restore from the detail page if needed.
 
+**Sizes and condition** (Settings): by default only adult M, L and XL
+(a listing offering several sizes counts if any is one of these) in Good
+condition or better. Listings outside these aren't valued; their open
+opportunities expire, and come back if the settings are widened.
+
 Only Kickio's **Football Shirts** category is scanned (`kickbuy.inventory`
 view); shorts, jackets, polos and other categories never become
 opportunities. A listing that is moved out of Football Shirts on Kickio

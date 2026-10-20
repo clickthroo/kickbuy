@@ -14,6 +14,8 @@ type Row = {
   require_exact_size: boolean;
   alerts_enabled: boolean;
   sale_sources: string[] | null;
+  listing_sizes: string[] | null;
+  worst_condition: string | null;
   updated_at: Date;
 };
 
@@ -25,6 +27,8 @@ export async function loadSettings(sql: postgres.Sql): Promise<AppSettings> {
     maxSaleAgeMonths: r.max_sale_age_months,
     requireExactSize: r.require_exact_size,
     saleSources: r.sale_sources && r.sale_sources.length > 0 ? r.sale_sources : null,
+    listingSizes: r.listing_sizes && r.listing_sizes.length > 0 ? r.listing_sizes : null,
+    worstCondition: r.worst_condition,
     scanIntervalMinutes: r.scan_interval_minutes,
     alertsEnabled: r.alerts_enabled,
     updatedAt: r.updated_at,

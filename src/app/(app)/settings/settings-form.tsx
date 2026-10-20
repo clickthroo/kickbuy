@@ -1,5 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
+import { CONDITIONS } from "@/lib/engine/normalise";
+import { LISTING_SIZES } from "@/lib/engine/scope";
 import { saveSettings } from "./actions";
 
 type Props = {
@@ -11,6 +13,8 @@ type Props = {
     requireExactSize: boolean;
     alertsEnabled: boolean;
     saleSources: string[] | null;
+    listingSizes: string[] | null;
+    worstCondition: string | null;
   };
   sources: { value: string; label: string; count: number }[];
 };
@@ -19,6 +23,7 @@ export function SettingsForm({ canEdit, settings, sources }: Props) {
   const [state, action, pending] = useActionState(saveSettings, null);
   const [threshold, setThreshold] = useState(settings.minDiscountPct);
   const [allSources, setAllSources] = useState(settings.saleSources === null);
+  const [allSizes, setAllSizes] = useState(settings.listingSizes === null);
 
   return (
     <form action={action} className="space-y-5">
@@ -50,6 +55,53 @@ export function SettingsForm({ canEdit, settings, sources }: Props) {
               </span>
             ))}
           </div>
+        </div>
+
+        <div className="card space-y-4 p-4 text-sm">
+          <div>
+            <p className="font-medium">Which listings to look at</p>
+            <p className="text-muted">
+              Listings outside these never become opportunities; existing ones expire, and come back if you widen
+              these again.
+            </p>
+          </div>
+          <fieldset className="space-y-2">
+            <legend className="mb-2 font-medium">Sizes</legend>
+            <label className="flex min-h-9 items-center gap-2">
+              <input type="checkbox" name="all_sizes" checked={allSizes} onChange={(e) => setAllSizes(e.target.checked)} />
+              All sizes, including kids&apos;
+            </label>
+            {!allSizes && (
+              <div className="flex flex-wrap gap-2">
+                {LISTING_SIZES.map((s) => (
+                  <label key={s} className="flex min-h-9 items-center gap-1.5 rounded border border-border px-3">
+                    <input
+                      type="checkbox"
+                      name="listing_sizes"
+                      value={s}
+                      defaultChecked={settings.listingSizes?.includes(s) ?? false}
+                    />
+                    {s}
+                  </label>
+                ))}
+              </div>
+            )}
+            {!allSizes && (
+              <p className="text-xs text-muted">Adult sizes only. Listings with no readable size are left out.</p>
+            )}
+          </fieldset>
+          <label className="block">
+            <span className="font-medium">Worst condition to include</span>
+            <select name="worst_condition" defaultValue={settings.worstCondition ?? "any"} className="input mt-1 sm:w-auto">
+              {CONDITIONS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                  {c === "Good" ? " (leaves out Fair and Needs Attention)" : ""}
+                </option>
+              ))}
+              <option value="any">Any condition</option>
+            </select>
+          </label>
         </div>
 
         <div className="card grid gap-4 p-4 sm:grid-cols-2">

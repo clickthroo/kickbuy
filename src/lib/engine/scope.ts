@@ -5,6 +5,9 @@
 // item really is: the shop's product URL and code, Kickio's shirt type, and
 // the listing description. Any one of them is enough to rule an item out.
 
+import { canonicalCondition, CONDITIONS, normaliseSize } from "./normalise";
+import type { Settings } from "./types";
+
 type Item = { source_url: string | null; shirt_type: string | null; description: string | null };
 
 // Whole words in the URL path. "shorts" may run straight into a product code
@@ -56,4 +59,31 @@ function decodeEntities(s: string): string {
     .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
     .replace(/&amp;/g, "&")
     .replace(/&nbsp;/g, " ");
+}
+
+// Adult sizes the Settings page offers, smallest first.
+export const LISTING_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
+
+// Why a listing falls outside the sizes and conditions KickBuy is set to
+// value, or null when it's in scope. A size we can't read, or a kids' size,
+// is out whenever sizes are restricted.
+export function outsideSettings(
+  listing: { size: string | null; condition: string | null },
+  settings: Pick<Settings, "listingSizes" | "worstCondition">,
+): string | null {
+  if (settings.worstCondition) {
+    const c = canonicalCondition(listing.condition);
+    const worst = CONDITIONS.indexOf(settings.worstCondition as (typeof CONDITIONS)[number]);
+    if (c && worst >= 0 && CONDITIONS.indexOf(c) > worst) return `Outside your settings: condition is ${c}`;
+  }
+  if (settings.listingSizes) {
+    // Shops list stock in several sizes ("M, L, XL", "L/XL"): any one will do.
+    const sizes = (listing.size ?? "").split(/[,/&]| or /).map(normaliseSize);
+    const wanted = settings.listingSizes;
+    if (!sizes.some((s) => s.band === "adult" && s.key !== null && wanted.includes(s.key))) {
+      const shown = listing.size?.trim() || "not given";
+      return `Outside your settings: size ${normaliseSize(listing.size).band === "kids" ? `${shown} (kids)` : shown}`;
+    }
+  }
+  return null;
 }

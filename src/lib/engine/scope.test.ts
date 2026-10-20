@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { notAFootballShirt } from "./scope";
+import { notAFootballShirt, outsideSettings } from "./scope";
 
 const cfs = (slug: string) => `https://www.classicfootballshirts.co.uk/${slug}.html`;
 const item = (o: { source_url?: string | null; shirt_type?: string | null; description?: string | null }) => ({
@@ -94,5 +94,42 @@ describe("notAFootballShirt", () => {
     ]) {
       expect(notAFootballShirt(item({ source_url: url })), url).toBeNull();
     }
+  });
+});
+
+describe("outsideSettings", () => {
+  const settings = { listingSizes: ["M", "L", "XL"], worstCondition: "Good" };
+
+  it("keeps medium, large and extra large in Good condition or better", () => {
+    for (const size of ["M", "Medium", "L", "Large", "XL", "X-Large", "Extra Large"]) {
+      for (const condition of ["Brand New (With Tags)", "Mint", "Very Good", "Good"]) {
+        expect(outsideSettings({ size, condition }, settings), `${size} ${condition}`).toBeNull();
+      }
+    }
+  });
+
+  it("leaves out Fair and worse", () => {
+    expect(outsideSettings({ size: "L", condition: "Fair" }, settings)).toBe("Outside your settings: condition is Fair");
+    expect(outsideSettings({ size: "L", condition: "Needs Attention" }, settings)).toMatch(/Needs Attention/);
+  });
+
+  it("leaves out other sizes, kids' sizes and unreadable sizes", () => {
+    expect(outsideSettings({ size: "S", condition: "Good" }, settings)).toBe("Outside your settings: size S");
+    expect(outsideSettings({ size: "XXL", condition: "Good" }, settings)).toMatch(/size XXL/);
+    expect(outsideSettings({ size: "XL Boys", condition: "Good" }, settings)).toBe("Outside your settings: size XL Boys (kids)");
+    expect(outsideSettings({ size: "S, XXL", condition: "Good" }, settings)).toMatch(/size S, XXL/);
+    expect(outsideSettings({ size: "13-14 Years", condition: "Good" }, settings)).toMatch(/\(kids\)/);
+    expect(outsideSettings({ size: null, condition: "Good" }, settings)).toBe("Outside your settings: size not given");
+  });
+
+  it("reads adult labels and multi-size stock", () => {
+    for (const size of ["Medium adult", "XL adult", "Large Adult", "M, L", "S, M", "L/XL", "M, L, XL, XXL", "Mens L"]) {
+      expect(outsideSettings({ size, condition: "Good" }, settings), size).toBeNull();
+    }
+    expect(outsideSettings({ size: "XXL (2XL)", condition: "Good" }, settings)).toMatch(/XXL/);
+  });
+
+  it("applies no restriction when the settings are cleared", () => {
+    expect(outsideSettings({ size: "XS Kids", condition: "Needs Attention" }, { listingSizes: null, worstCondition: null })).toBeNull();
   });
 });

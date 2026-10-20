@@ -99,7 +99,9 @@ export function normaliseSize(value: string | null | undefined): NormalisedSize 
   }
 
   if (/[,/&]| or /.test(s)) return { key: null, band: "adult" }; // "M, L": ambiguous
-  const compact = s.replace(/[\s.-]+/g, " ").trim();
+  // "Medium adult", "XXL (2XL)", "Mens L".
+  const plain = s.replace(/\([^)]*\)/g, " ").replace(/\b(adults?|mens|men's|men|unisex)\b/g, " ");
+  const compact = plain.replace(/[\s.-]+/g, " ").trim();
   const word = ADULT_WORDS[compact] ?? ADULT_WORDS[compact.replace(/ /g, "")];
   if (word) return { key: word, band: "adult" };
   const upper = compact.replace(/ /g, "").toUpperCase();

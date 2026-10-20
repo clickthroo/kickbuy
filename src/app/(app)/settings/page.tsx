@@ -33,6 +33,8 @@ export default async function SettingsPage() {
           requireExactSize: settings.requireExactSize,
           alertsEnabled: settings.alertsEnabled,
           saleSources: settings.saleSources,
+          listingSizes: settings.listingSizes,
+          worstCondition: settings.worstCondition,
         }}
         sources={sources}
       />

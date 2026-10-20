@@ -15,7 +15,7 @@
 import type postgres from "postgres";
 import { evaluateListing, type Evaluation, SalesIndex } from "../engine/evaluate";
 import { norm } from "../engine/normalise";
-import { notAFootballShirt } from "../engine/scope";
+import { notAFootballShirt, outsideSettings } from "../engine/scope";
 import type { FxLookup, InventoryRow, SaleRow } from "../engine/types";
 import { type AppSettings, loadSettings } from "../settings";
 import { decide, type ExistingOpportunity } from "./lifecycle";
@@ -144,6 +144,8 @@ function settingsSnapshot(s: AppSettings) {
     maxSaleAgeMonths: s.maxSaleAgeMonths,
     requireExactSize: s.requireExactSize,
     saleSources: s.saleSources,
+    listingSizes: s.listingSizes,
+    worstCondition: s.worstCondition,
     alertsEnabled: s.alertsEnabled,
   };
 }
@@ -217,14 +219,17 @@ async function scan(
   }
 
   // Items filed under Football Shirts that aren't one are never valued, and
-  // any opportunity already raised for one is removed for good.
+  // any opportunity already raised for one is removed for good. Sizes and
+  // conditions outside the settings aren't valued either; their opportunities
+  // expire, and come back if the settings change.
   const listingsScanned = listings.length;
-  const notShirts = new Map<string, GoneReason>();
+  const outOfScope = new Map<string, GoneReason>();
   listings = listings.filter((l) => {
-    const reason = notAFootballShirt(l);
+    const notShirt = notAFootballShirt(l);
+    const reason = notShirt ?? outsideSettings(l, settings);
     if (!reason) return true;
     if (existing.has(l.listing_id)) {
-      notShirts.set(l.listing_id, { reason, remove: true });
+      outOfScope.set(l.listing_id, { reason, remove: notShirt !== null });
       checkedIds.add(l.listing_id);
     }
     return false;
@@ -252,9 +257,9 @@ async function scan(
 
   const gone = await whyGone(
     db.kickio,
-    [...checkedIds].filter((id) => !evaluations.has(id) && !notShirts.has(id)),
+    [...checkedIds].filter((id) => !evaluations.has(id) && !outOfScope.has(id)),
   );
-  for (const [id, g] of notShirts) gone.set(id, g);
+  for (const [id, g] of outOfScope) gone.set(id, g);
   await record(db.app, runId, settings, now, evaluations, existing, checkedIds, stats, gone);
   return { ...stats, watermark };
 }

@@ -231,6 +231,30 @@ describe.skipIf(!base)("scan (integration)", () => {
     expect(after.removed_at).not.toBeNull();
     expect(after.removed_reason).toBe('Not a football shirt: the source listing is "training-top"');
   });
+  it("only values the sizes and conditions in settings, and expires ones that fall outside", async () => {
+    const L13 = "20000000-0000-0000-0000-000000000013";
+    const L14 = "20000000-0000-0000-0000-000000000014";
+    await kickioOwner`
+      insert into public.listings (id, title, product_id, size, condition, status, price_cents, updated_at)
+      values (${L13}, 'Shirt', ${P_UTD}, 'XL', 'Fair', 'active', 1000, now()),
+             (${L14}, 'Shirt', ${P_UTD}, 'L', 'Very Good', 'active', 4000, now())
+    `;
+    await runScan(db, { trigger: "manual" });
+    const rows = await db.app`select listing_id from kickbuy.opportunities where listing_id in (${L13}, ${L14})`;
+    expect(rows.map((r) => r.listing_id)).toEqual([L14]);
+
+    await kickioOwner`update public.listings set size = 'S', updated_at = now() where id = ${L14}`;
+    await runScan(db, { trigger: "manual" });
+    const [o] = await db.app`select status, expired_reason, removed_at from kickbuy.opportunities where listing_id = ${L14}`;
+    expect(o).toMatchObject({ status: "expired", expired_reason: "Outside your settings: size S", removed_at: null });
+
+    // Widening the settings brings it back.
+    await db.app`update kickbuy.settings set listing_sizes = null, updated_at = now()`;
+    await runScan(db, { trigger: "manual" });
+    const [back] = await db.app`select status from kickbuy.opportunities where listing_id = ${L14}`;
+    expect(back.status).toBe("new");
+    await db.app`update kickbuy.settings set listing_sizes = '{M,L,XL}', updated_at = now()`;
+  });
 });
 
 async function insert(sql: postgres.Sql, table: string, rows: Record<string, unknown>[]) {

@@ -59,4 +59,7 @@ export type Settings = {
   maxSaleAgeMonths: number | null;
   requireExactSize: boolean;
   saleSources: string[] | null;
+  // Which listings are valued at all; null = no restriction.
+  listingSizes: string[] | null;
+  worstCondition: string | null;
 };
