@@ -24,7 +24,7 @@ create table public.listings (
   prep_status text, source text, source_url text, scrape_source_id uuid, is_partner_listing boolean not null default false,
   category text not null default 'Football Shirts', team text, season text, shirt_type text, manufacturer text,
   gender text, issue text, special_edition text, sleeves text, signed text, boxed_edition text, player_name text,
-  "number" text, created_at timestamptz not null default '2026-10-01', updated_at timestamptz not null default '2026-10-01',
+  "number" text, description text, created_at timestamptz not null default '2026-10-01', updated_at timestamptz not null default '2026-10-01',
   deleted_at timestamptz
 );
 create table public.sales_history (

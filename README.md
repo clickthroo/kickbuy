@@ -110,10 +110,12 @@ view); shorts, jackets, polos and other categories never become
 opportunities. A listing that is moved out of Football Shirts on Kickio
 is removed from KickBuy automatically at the next scan, as if someone had
 pressed Remove. Some items Kickio files as Football Shirts
-are something else (shorts, shirt-and-shorts sets, training tops and vests,
-polos, tees, jackets, rugby or US-sports jerseys); the shop's product URL
-still says so, and those are never valued and are removed the same way
-(`src/lib/engine/scope.ts`). Price changes are kept in `kickbuy.price_snapshots`.
+are something else (shorts, kits, training and leisure wear, fan tees, polos,
+jackets, rugby shirts), often with a generated "... Home Shirt" title. Each
+listing is checked against the shop's product URL and Classic Football
+Shirts' product code, Kickio's shirt type and the listing description; any one
+saying it isn't a match shirt keeps it out, and removes an opportunity already
+raised for it (`src/lib/engine/scope.ts`). Price changes are kept in `kickbuy.price_snapshots`.
 
 **Alerts** are in-app, once per listing and qualifying price; a further price
 drop alerts again (`unique (listing_id, ask_pence)` plus a "below the lowest

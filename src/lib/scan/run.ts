@@ -63,7 +63,7 @@ const OVERLAP_MS = 5 * 60 * 1000;
 const INVENTORY_COLUMNS = `listing_id, product_id, seller_id, title, status, prep_status, source, source_url,
   source_name, is_partner_listing, price_cents, raw_price_cents, currency, size, condition, team, team_id,
   season, shirt_type, manufacturer, gender, issue, special_edition, sleeves, signed, boxed_edition,
-  player_name, shirt_number, image_url, created_at, updated_at`;
+  player_name, shirt_number, image_url, description, created_at, updated_at`;
 
 export async function runScan(db: Databases, opts: ScanOptions): Promise<ScanResult> {
   const now = opts.now ?? new Date();
@@ -221,7 +221,7 @@ async function scan(
   const listingsScanned = listings.length;
   const notShirts = new Map<string, GoneReason>();
   listings = listings.filter((l) => {
-    const reason = notAFootballShirt(l.source_url);
+    const reason = notAFootballShirt(l);
     if (!reason) return true;
     if (existing.has(l.listing_id)) {
       notShirts.set(l.listing_id, { reason, remove: true });

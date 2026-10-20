@@ -33,6 +33,7 @@ export type InventoryRow = Identity & {
   is_partner_listing: boolean;
   raw_price_cents: number | null;
   image_url: string | null;
+  description: string | null;
   created_at: Date;
   updated_at: Date;
 };

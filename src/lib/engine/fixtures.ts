@@ -36,6 +36,7 @@ export function listing(overrides: Partial<InventoryRow> = {}): InventoryRow {
     price_cents: 8000,
     raw_price_cents: 8000,
     image_url: null,
+    description: null,
     created_at: new Date("2026-10-10T10:00:00Z"),
     updated_at: new Date("2026-10-10T10:00:00Z"),
     ...overrides,
