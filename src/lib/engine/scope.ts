@@ -27,10 +27,13 @@ const TYPES =
   /\b(training|polo|fan|supporter|leisure|lifestyle|pre-?match|base ?layer|compression|graphic|cotton|tour|academy|youth camp|button-up|warm ?up|travel|tee|jacket|hooded|shorts|vest|presentation|casual)\b/;
 
 // Description phrases that say what the item is. Deliberately specific: a
-// shirt's description can mention training or shorts in passing. Reversible
-// shirts (England 2002-05) describe the training shirt on the inside.
+// shirt's description can mention training or shorts in passing ("worn with
+// white shorts and socks"), so shorts only count when the item itself is
+// shorts ("2007/09 home shorts details", "away shorts, medium") or a shirt
+// sold with them ("home shirt & shorts - 8/10"). Reversible shirts (England
+// 2002-05) describe the training shirt on the inside.
 const DESCRIPTION =
-  /\b(fan shirt|fans? (?:edition|version) shirt|supporters?'? shirt|training (?:top|shirt|jersey|tee|vest)|polo shirt|t-shirt|tee shirt|(?:1\/4|1\/2|quarter|half)[- ]zip|track (?:top|jacket)|sweatshirt|hoodie|hooded top|pre-?match (?:top|shirt)|warm[- ]up (?:top|shirt)|leisure (?:top|shirt)|rugby shirt)\b/;
+  /\b(season - \S+ [a-z ]{0,30}?shorts|shorts, (?:xxs|xs|s|small|m|medium|l|large|xl|xxl|x-large|extra large)\b|these shorts|shorts printing|shirt (?:and|&) shorts - \d|fan shirt|fans? (?:edition|version) shirt|supporters?'? shirt|training (?:top|shirt|jersey|tee|vest)|polo shirt|t-shirt|tee shirt|(?:1\/4|1\/2|quarter|half)[- ]zip|track (?:top|jacket)|sweatshirt|hoodie|hooded top|pre-?match (?:top|shirt)|warm[- ]up (?:top|shirt)|leisure (?:top|shirt)|rugby shirt)\b/;
 
 // Why an item isn't a football shirt, or null when it is (or we can't tell).
 export function notAFootballShirt(item: Item): string | null {
@@ -46,7 +49,7 @@ export function notAFootballShirt(item: Item): string | null {
   }
   const type = item.shirt_type && TYPES.exec(item.shirt_type.toLowerCase());
   if (type) return `Not a football shirt: Kickio lists it as "${item.shirt_type}"`;
-  const description = item.description && decodeEntities(item.description).toLowerCase();
+  const description = item.description && decodeEntities(item.description.replace(/<[^>]+>/g, " ")).toLowerCase();
   const text = description && !/reversible|inside out/.test(description) && DESCRIPTION.exec(description);
   if (text) return `Not a football shirt: the description says "${text[1]}"`;
   return null;

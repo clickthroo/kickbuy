@@ -71,12 +71,26 @@ describe("notAFootballShirt", () => {
     expect(notAFootballShirt(item({ description: "Adidas 1/4 zip, black" }))).toMatch(/1\/4 zip/);
   });
 
+  it("spots shorts and shirt-and-shorts sets from the description", () => {
+    for (const description of [
+      "TEAM - Manchester United SEASON - 2007/09 Home Shorts DETAILS - Original Lextra shorts printing",
+      "<p>TEAM - Glasgow Rangers SEASON - 1998/99 Away Shorts &amp; Socks DETAILS</p>",
+      "Neal Maupay matchworn/issue Everton FC 2022/23 home kit shorts, medium #20, VGC.",
+      "1995-97 Juventus Home Shirt &#x26; Shorts - 8/10 - (M)",
+      "1999-01 Ipswich Home Shirt and Shorts - 8/10 - (XL)",
+    ]) {
+      expect(notAFootballShirt(item({ description })), description).toMatch(/description says/);
+    }
+  });
+
   it("keeps real shirts whose description mentions training wear in passing", () => {
     for (const description of [
       "Famously reversible, revealing a navy training shirt on the inside.",
       "Turn the shirt inside out for a navy training shirt!",
       "Atlanta United USA MLS home football shirt 2023 Adidas BNWT",
       "Worn in training and matches. Comes without shorts.",
+      "Yellow shorts with black trim and yellow socks complete the kit.",
+      "Shirt size - large adult. Shorts - large adult (EU size)",
     ]) {
       expect(notAFootballShirt(item({ description })), description).toBeNull();
     }
