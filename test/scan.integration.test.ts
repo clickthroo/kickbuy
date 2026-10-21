@@ -282,6 +282,24 @@ describe.skipIf(!base)("scan (integration)", () => {
     expect(valid.map((r) => r.sale_id).sort()).toEqual(ids.slice(0, 3).sort());
     await kickioOwner`delete from public.sales_history where id = any(${ids}::uuid[])`;
   });
+  it("ignores a product link that contradicts the sale's own details", async () => {
+    // Linked to the short-sleeved product, but the sale itself is long-sleeved.
+    const [bad] = await kickioOwner`
+      insert into public.sales_history (product_id, sold_at, price_cents, condition, size, source, sleeves)
+      values (${P_UTD}, '2026-10-01', 32300, 'Very Good', 'XL', 'cfs', 'Long-Sleeved') returning id
+    `;
+    const [ok] = await kickioOwner`
+      insert into public.sales_history (product_id, sold_at, price_cents, condition, size, source, sleeves)
+      values (${P_UTD}, '2026-10-01', 9000, 'Very Good', 'XL', 'cfs', 'Short-Sleeved') returning id
+    `;
+    const rows = await db.kickio`
+      select sale_id, product_id, sleeves from kickbuy.sales where sale_id in (${bad.id}, ${ok.id})
+    `;
+    const byId = Object.fromEntries(rows.map((r) => [r.sale_id, r]));
+    expect(byId[bad.id]).toMatchObject({ product_id: null, sleeves: "Long-Sleeved" });
+    expect(byId[ok.id]).toMatchObject({ product_id: P_UTD, sleeves: "Short-Sleeved" });
+    await kickioOwner`delete from public.sales_history where id in (${bad.id}, ${ok.id})`;
+  });
 });
 
 async function insert(sql: postgres.Sql, table: string, rows: Record<string, unknown>[]) {
