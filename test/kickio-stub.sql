@@ -25,7 +25,7 @@ create table public.listings (
   category text not null default 'Football Shirts', team text, season text, shirt_type text, manufacturer text,
   gender text, issue text, special_edition text, sleeves text, signed text, boxed_edition text, player_name text,
   "number" text, description text, created_at timestamptz not null default '2026-10-01', updated_at timestamptz not null default '2026-10-01',
-  deleted_at timestamptz
+  deleted_at timestamptz, removed_at timestamptz, removed_reason text
 );
 create table public.sales_history (
   id uuid primary key default gen_random_uuid(), product_id uuid, listing_id uuid, sold_at timestamptz not null,

@@ -261,6 +261,27 @@ describe.skipIf(!base)("scan (integration)", () => {
     expect(back.status).toBe("new");
     await db.app`update kickbuy.settings set listing_sizes = '{M,L,XL}', updated_at = now()`;
   });
+  it("ignores sales inferred from a scraper's mass disappearance", async () => {
+    // A shop "sells" 1 a day for three days, then 120 in one day (a failed sweep).
+    const days = ["2026-09-01", "2026-09-02", "2026-09-03", ...Array(120).fill("2026-09-04")];
+    const ids: string[] = [];
+    for (const [n, day] of days.entries()) {
+      const [l] = await kickioOwner`
+        insert into public.listings (title, size, condition, status, price_cents, removed_at, removed_reason, source_url)
+        values ('Shirt', 'L', 'Very Good', 'removed', 5000, ${day}, 'sweep_vanished', ${`https://vfs.example/p/${n}`})
+        returning id
+      `;
+      const [s] = await kickioOwner`
+        insert into public.sales_history (listing_id, sold_at, price_cents, condition, size, source, team, season, shirt_type)
+        values (${l.id}, ${day}, 5000, 'Very Good', 'L', 'vfs', 'Testville', '2026-27', 'Home')
+        returning id
+      `;
+      ids.push(s.id);
+    }
+    const valid = await db.kickio`select sale_id from kickbuy.sales where sale_id = any(${ids}::uuid[])`;
+    expect(valid.map((r) => r.sale_id).sort()).toEqual(ids.slice(0, 3).sort());
+    await kickioOwner`delete from public.sales_history where id = any(${ids}::uuid[])`;
+  });
 });
 
 async function insert(sql: postgres.Sql, table: string, rows: Record<string, unknown>[]) {

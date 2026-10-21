@@ -64,7 +64,9 @@ owns it. See `EXCLUDED_SELLER_IDS` in `src/lib/scan/run.ts`.
    "review".
 
 2. **Find the reference sale** (`src/lib/engine/evaluate.ts`): valid sales
-   only (approved, not excluded, not refunded/disputed; see `db/README.md`),
+   only (approved, not excluded, not refunded/disputed, not a "sale" Kickio
+   inferred from a scraper's mass disappearance or whose listing is live
+   again; see `db/kickio/0004_*.sql`),
    never the listing's own earlier sale (same listing or same vendor URL),
    from the enabled sales sources. The **lowest-priced** comparable sale within
    the maximum sale age is the reference, so a listing is only flagged when
