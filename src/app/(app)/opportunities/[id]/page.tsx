@@ -60,16 +60,16 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
         <div className="card p-4 lg:col-span-2">
           <div className="grid grid-cols-3 gap-3 sm:gap-4">
             <Figure label="Asking price" value={money(o.ask_pence, ccy)} />
-            <Figure label="Last sold" value={money(o.ref_price_pence, ccy)} note={date(o.ref_sold_at)} />
+            <Figure label="Lowest sold" value={money(o.ref_price_pence, ccy)} note={date(o.ref_sold_at)} />
             <Figure
-              label="Below last sold"
+              label="Below lowest sold"
               value={pct(o.discount_pct)}
               note={`Saving ${money(o.saving_pence, ccy)}`}
               strong
             />
           </div>
           <p className="mt-4 text-xs text-muted">
-            Discount = (last sold − asking) ÷ last sold = ({money(o.ref_price_pence, ccy)} − {money(o.ask_pence, ccy)}) ÷{" "}
+            Discount = (lowest sold − asking) ÷ lowest sold = ({money(o.ref_price_pence, ccy)} − {money(o.ask_pence, ccy)}) ÷{" "}
             {money(o.ref_price_pence, ccy)}. Prices exclude postage and tax.
           </p>
         </div>
@@ -159,7 +159,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
           <span className="text-muted">
             {o.comparable_count} comparable sale{o.comparable_count === 1 ? "" : "s"}
             {o.median_pence !== null && o.recent_sales.length > 1 && (
-              <> · median of last {o.recent_sales.length}: {money(o.median_pence, ccy)}</>
+              <> · median of last {Math.min(3, o.recent_sales.length)}: {money(o.median_pence, ccy)}</>
             )}
           </span>
         </div>
@@ -251,7 +251,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                 <tr>
                   <th>Seen</th>
                   <th className="num">Ask</th>
-                  <th className="num">Last sold</th>
+                  <th className="num">Lowest sold</th>
                   <th className="num">Discount</th>
                 </tr>
               </thead>

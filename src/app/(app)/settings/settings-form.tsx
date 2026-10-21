@@ -34,7 +34,7 @@ export function SettingsForm({ canEdit, settings, sources, shops }: Props) {
           <label htmlFor="threshold" className="font-medium">
             Minimum discount: <span className="tabular-nums">{threshold}%</span>
           </label>
-          <p className="text-sm text-muted">Flag listings at or above this discount to their last sale.</p>
+          <p className="text-sm text-muted">Flag listings at or above this discount below the lowest sale of the same shirt in the period below.</p>
           <input
             id="threshold"
             name="min_discount_pct"
@@ -128,7 +128,7 @@ export function SettingsForm({ canEdit, settings, sources, shops }: Props) {
 
         <div className="card grid gap-4 p-4 sm:grid-cols-2">
           <label className="text-sm">
-            <span className="font-medium">Maximum age of the last sale</span>
+            <span className="font-medium">Sales period to compare against</span>
             <select
               name="max_sale_age_months"
               defaultValue={settings.maxSaleAgeMonths === null ? "none" : String(settings.maxSaleAgeMonths)}

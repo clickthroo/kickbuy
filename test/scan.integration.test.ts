@@ -120,7 +120,13 @@ describe.skipIf(!base)("scan (integration)", () => {
   it("picks up price drops, new sales and removals incrementally", async () => {
     await kickioOwner`update public.listings set price_cents = 7000, updated_at = now() where id = ${L1}`;
     await kickioOwner`update public.listings set status = 'removed', updated_at = now() where id = ${L5}`;
-    // A new sale makes L2 (unchanged itself) an opportunity: 45% below.
+    // The £120 and £85 sales are excluded and a new £200 sale recorded, so
+    // the lowest valid sale is now £200: L2 (unchanged itself) becomes an
+    // opportunity, 45% below.
+    await kickioOwner`
+      update public.sales_history set excluded_at = now()
+      where product_id = ${P_UTD} and price_cents in (12000, 8500) and source = 'cfs'
+    `;
     await kickioOwner`
       insert into public.sales_history (product_id, sold_at, price_cents, condition, size, source, created_at)
       values (${P_UTD}, '2026-10-14', 20000, 'Very Good', 'L', 'kickio', now())
@@ -138,7 +144,7 @@ describe.skipIf(!base)("scan (integration)", () => {
         (o) => [o.listing_id, o],
       ),
     );
-    // L1 now references the newer Kickio sale.
+    // L1 now references the Kickio sale, the lowest left.
     expect(opps[L1]).toMatchObject({ status: "new", ask_pence: 7000, ref_price_pence: 20000 });
     expect(opps[L2]).toMatchObject({ status: "new", ask_pence: 11000 });
     expect(opps[L5]).toMatchObject({ status: "expired", expired_reason: "Removed from Kickio" });

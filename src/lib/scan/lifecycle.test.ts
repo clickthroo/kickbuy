@@ -49,7 +49,7 @@ describe("decide", () => {
       status: "expired",
       expiredReason: "Listing is no longer available",
     });
-    expect(decide(open, priced(9900, false), 8000, true).expiredReason).toBe("No longer qualifies: 5% below the last sale");
+    expect(decide(open, priced(9900, false), 8000, true).expiredReason).toBe("No longer qualifies: 5% below the lowest recent sale");
     expect(decide(open, { kind: "insufficient_data", reasons: [] }, 8000, true).status).toBe("expired");
     expect(decide({ status: "expired", dismissed_ask_pence: null }, priced(8000), 8000, true)).toMatchObject({
       status: "new",

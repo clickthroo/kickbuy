@@ -28,7 +28,7 @@ export default async function Dashboard({ searchParams }: PageProps<"/">) {
         <div>
           <h1 className="text-xl font-semibold sm:text-2xl">Buying opportunities</h1>
           <p className="text-sm text-muted">
-            Kickio listings priced below the last sale of the same shirt in the same condition. Read-only: KickBuy
+            Kickio listings priced below the lowest recent sale of the same shirt in the same condition. Read-only: KickBuy
             never changes a listing.
           </p>
         </div>

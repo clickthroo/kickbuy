@@ -66,12 +66,14 @@ owns it. See `EXCLUDED_SELLER_IDS` in `src/lib/scan/run.ts`.
 2. **Find the reference sale** (`src/lib/engine/evaluate.ts`): valid sales
    only (approved, not excluded, not refunded/disputed; see `db/README.md`),
    never the listing's own earlier sale (same listing or same vendor URL),
-   from the enabled sales sources. Among the best-matching comparables, the
-   **most recent** sale is the reference. Sales older than the maximum age are
-   used only when nothing fresher exists, and are marked stale. Foreign
+   from the enabled sales sources. The **lowest-priced** comparable sale within
+   the maximum sale age is the reference, so a listing is only flagged when
+   it's below every recent sale. Sales older than the maximum age are used
+   only when nothing fresher exists (the best, most recent one), and are
+   marked stale. Foreign
    currency is converted at the rate KickBuy recorded nearest the sale date.
 
-3. **Discount** = (last sold − asking) ÷ last sold × 100. The listing is an
+3. **Discount** = (lowest sold − asking) ÷ lowest sold × 100. The listing is an
    opportunity at or above the threshold (default 20%). The last three
    comparable sales and their median are shown for context only.
 

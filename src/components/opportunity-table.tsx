@@ -43,7 +43,7 @@ export function OpportunityTable({
                 <dd className="font-semibold tabular-nums">{money(o.ask_pence, o.ask_currency)}</dd>
               </div>
               <div>
-                <dt className="text-[0.65rem] uppercase tracking-wide text-muted">Last sold</dt>
+                <dt className="text-[0.65rem] uppercase tracking-wide text-muted">Lowest sold</dt>
                 <dd className="tabular-nums">{money(o.ref_price_pence, o.ask_currency)}</dd>
               </div>
               <div>
@@ -70,7 +70,7 @@ export function OpportunityTable({
             <tr>
               <th>Shirt</th>
               <th className="num">Ask</th>
-              <th className="num">Last sold</th>
+              <th className="num">Lowest sold</th>
               <th className="num">Discount</th>
               <th className="num">Saving</th>
               <th>Match</th>

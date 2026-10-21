@@ -67,7 +67,7 @@ export default async function AlertsPage() {
                 <th>When</th>
                 <th>Opportunity</th>
                 <th className="num">Ask</th>
-                <th className="num">Last sold</th>
+                <th className="num">Lowest sold</th>
                 <th className="num">Discount</th>
                 <th>Now</th>
               </tr>

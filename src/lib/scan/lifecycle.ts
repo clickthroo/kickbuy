@@ -42,7 +42,7 @@ export function decide(
       evaluation === null
         ? "Listing is no longer available"
         : priced
-          ? `No longer qualifies: ${priced.discountPct}% below the last sale`
+          ? `No longer qualifies: ${priced.discountPct}% below the lowest recent sale`
           : evaluation.kind === "unmatchable"
             ? `Can no longer be matched: ${evaluation.reasons.join("; ")}`
             : "No valid comparable sale any more";

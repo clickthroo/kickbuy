@@ -1,9 +1,11 @@
 // Valuation: for one listing, find its comparable sales, pick the reference
 // sale, and work out the discount.
 //
-// The reference is always one real sale: the most recent valid sale of the
-// same shirt in the same condition. Median and recent sales are shown for
-// context only and never replace it. Money is in pence (integers).
+// The reference is always one real sale: the lowest-priced valid sale of the
+// same shirt in the same condition within the sale-age limit, so a listing is
+// only flagged when it's below every recent comparable sale. Median and recent
+// sales are shown for context only and never replace it. Money is in pence
+// (integers).
 
 import { bucketKey, type Confidence, CONFIDENCE_RANK, isSelfSale, matchShirts, type Shirt, toShirt, unmatchableReasons } from "./match";
 import type { FxLookup, InventoryRow, SaleRow, Settings, TeamLookup } from "./types";
@@ -38,7 +40,7 @@ export type Evaluation =
       confidence: Confidence;
       needsReview: boolean;
       notes: string[];
-      recent: Comparable[]; // up to three most recent comparables, newest first
+      recent: Comparable[]; // the three most recent comparables plus the reference, newest first
       medianPence: number | null; // of `recent`
       comparableCount: number;
     };
@@ -121,6 +123,11 @@ export function discountPct(askPence: number, refPence: number): number {
   return Math.round(((refPence - askPence) / refPence) * 10000) / 100;
 }
 
+// Cheapest first; ties go to the better match.
+function cheaper(a: Comparable, b: Comparable): number {
+  return a.pence - b.pence || better(a, b);
+}
+
 // Best match first: more confident, then same size, then most recent.
 function better(a: Comparable, b: Comparable): number {
   return (
@@ -189,13 +196,15 @@ export function evaluateListing(
     };
   }
 
-  // Sales older than the age limit are only used when there is nothing
-  // fresher, and then they're marked stale.
+  // The lowest sale within the age limit. Older sales are only used when
+  // there is nothing fresher: then the best, most recent one, marked stale.
   const fresh = comparables.filter((c) => !c.stale);
-  const pool = (fresh.length > 0 ? fresh : comparables).sort(better);
-  const reference = pool[0];
+  const pool = fresh.length > 0 ? fresh : comparables;
+  const reference = [...pool].sort(fresh.length > 0 ? cheaper : better)[0];
 
-  const recent = [...pool].sort((a, b) => b.soldAt.getTime() - a.soldAt.getTime()).slice(0, 3);
+  const byDate = (a: Comparable, b: Comparable) => b.soldAt.getTime() - a.soldAt.getTime();
+  const lastThree = [...pool].sort(byDate).slice(0, 3);
+  const recent = lastThree.includes(reference) ? lastThree : [...lastThree, reference].sort(byDate);
   const askPence = listing.price_cents;
   const pct = discountPct(askPence, reference.pence);
   const notes = [...reference.notes];
@@ -213,7 +222,7 @@ export function evaluateListing(
     needsReview: reference.confidence === "low" || reference.stale,
     notes,
     recent,
-    medianPence: median(recent.map((c) => c.pence)),
+    medianPence: median(lastThree.map((c) => c.pence)),
     comparableCount: pool.length,
   };
 }

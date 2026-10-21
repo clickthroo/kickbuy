@@ -37,18 +37,35 @@ describe("discount", () => {
 });
 
 describe("reference sale", () => {
-  it("uses the most recent sale, not the median or the highest", () => {
+  it("uses the lowest sale within the period, not the most recent, median or best size", () => {
+    // The screenshot case: £250.99 (same size) and £98.99 in August, £91.50 in October.
     const r = priced(
       evaluate([
-        sale({ sale_id: "s1", price_cents: 20000, sold_at: new Date("2026-06-01") }),
-        sale({ sale_id: "s2", price_cents: 9000, sold_at: new Date("2026-10-01") }),
-        sale({ sale_id: "s3", price_cents: 15000, sold_at: new Date("2026-08-01") }),
+        sale({ sale_id: "vfs-l", size: "L", price_cents: 25099, sold_at: new Date("2026-08-21") }),
+        sale({ sale_id: "vfs-xl", size: "XL", price_cents: 9899, sold_at: new Date("2026-08-20") }),
+        sale({ sale_id: "kc-m", size: "M", price_cents: 9150, sold_at: new Date("2026-10-10") }),
+        sale({ sale_id: "old", size: "L", price_cents: 5000, sold_at: new Date("2025-01-01") }),
       ]),
     );
-    expect(r.reference.saleId).toBe("s2");
-    expect(r.recent.map((c) => c.saleId)).toEqual(["s2", "s3", "s1"]);
-    expect(r.medianPence).toBe(15000);
-    expect(r.discountPct).toBe(11.11);
+    expect(r.reference.saleId).toBe("kc-m");
+    expect(r.reference.stale).toBe(false);
+    expect(r.recent.map((c) => c.saleId)).toEqual(["kc-m", "vfs-l", "vfs-xl"]);
+    expect(r.medianPence).toBe(9899);
+  });
+
+  it("shows the reference with the recent sales even when it's older than the last three", () => {
+    const r = priced(
+      evaluate([
+        sale({ sale_id: "cheap", price_cents: 6000, sold_at: new Date("2026-02-01") }),
+        sale({ sale_id: "a", price_cents: 9000, sold_at: new Date("2026-10-01") }),
+        sale({ sale_id: "b", price_cents: 9500, sold_at: new Date("2026-09-01") }),
+        sale({ sale_id: "c", price_cents: 9900, sold_at: new Date("2026-08-01") }),
+      ]),
+    );
+    expect(r.reference.saleId).toBe("cheap");
+    expect(r.recent.map((c) => c.saleId)).toEqual(["a", "b", "c", "cheap"]);
+    expect(r.medianPence).toBe(9500);
+    expect(r.discountPct).toBe(-33.33);
   });
 
   it("never values against a sale in a different condition", () => {
