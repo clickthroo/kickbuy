@@ -39,7 +39,8 @@ export type Shirt = {
   signed: string;
   specialEdition: string;
   boxedEdition: string;
-  // A missing name/number means "no name set", so they must match exactly.
+  // A missing name means "no name set", so names must match exactly; a
+  // missing number with a matching name is allowed at low confidence.
   player: string | null;
   number: string | null;
   sourceUrl: string | null;
@@ -117,6 +118,7 @@ export function matchShirts(listing: Shirt, sale: Shirt, opts: { requireExactSiz
 
   const sameProduct = listing.productId !== null && listing.productId === sale.productId;
   const notes: string[] = [];
+  let numberAssumed: string | null = null;
 
   if (!sameProduct) {
     // Required attributes: both known and equal.
@@ -124,13 +126,24 @@ export function matchShirts(listing: Shirt, sale: Shirt, opts: { requireExactSiz
     if (!listing.season || listing.season !== sale.season) return { ok: false, reason: "different season" };
     if (!listing.shirtType || listing.shirtType !== sale.shirtType) return { ok: false, reason: "different shirt type" };
     if (listing.player !== sale.player) return { ok: false, reason: "different player / name set" };
-    if (listing.number !== sale.number) return { ok: false, reason: "different number" };
+    if (listing.number !== sale.number) {
+      // Same player name, but one side has no number recorded ("Ronaldo" vs
+      // "Ronaldo #7"): most likely the same printing, so keep it for a check.
+      if (listing.player === null || (listing.number !== null && sale.number !== null)) {
+        return { ok: false, reason: "different number" };
+      }
+      numberAssumed = `number missing on the ${listing.number === null ? "listing" : "sale"}`;
+    }
   }
   if (listing.signed !== sale.signed) return { ok: false, reason: "signed vs not signed" };
   if (listing.specialEdition !== sale.specialEdition) return { ok: false, reason: "different special edition" };
   if (listing.boxedEdition !== sale.boxedEdition) return { ok: false, reason: "different boxed edition" };
 
   let assumed = 0;
+  if (numberAssumed) {
+    assumed += 1;
+    notes.push(numberAssumed);
+  }
   for (const { key, label } of SOFT) {
     const a = listing[key];
     const b = sale[key];
