@@ -127,6 +127,18 @@ Shirts' product code, Kickio's shirt type and the listing description; any one
 saying it isn't a match shirt keeps it out, and removes an opportunity already
 raised for it (`src/lib/engine/scope.ts`). Price changes are kept in `kickbuy.price_snapshots`.
 
+**Telegram alerts** (optional): each user links their own Telegram chat from
+Settings → Telegram alerts and gets new opportunities and price drops as
+messages with Watch / Dismiss / Remove buttons (buyers and owners). Per-user
+settings: minimum discount, include "needs a check" matches, live only, quiet
+hours (held alerts go out afterwards). Sent after every scan and every cron
+tick; each alert is sent once per person (`kickbuy.telegram_deliveries`), at
+most 8 per run with a summary for the rest. Setup: create a bot with
+@BotFather, add `TELEGRAM_BOT_TOKEN` in Vercel and redeploy, then an owner
+presses "Connect bot" (sets the webhook to `/api/telegram`, which only accepts
+calls carrying a secret derived from the token). Code: `src/lib/telegram/`,
+`src/app/api/telegram/route.ts`.
+
 **Alerts** are in-app, once per listing and qualifying price; a further price
 drop alerts again (`unique (listing_id, ask_pence)` plus a "below the lowest
 price already alerted" rule).

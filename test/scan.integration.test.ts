@@ -6,8 +6,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { runScan } from "../src/lib/scan/run";
+import { deliverTelegramAlerts } from "../src/lib/telegram/deliver";
 
 const base = process.env.KICKBUY_TEST_PG;
 const root = path.resolve(__dirname, "..");
@@ -299,6 +300,57 @@ describe.skipIf(!base)("scan (integration)", () => {
     expect(byId[bad.id]).toMatchObject({ product_id: null, sleeves: "Long-Sleeved" });
     expect(byId[ok.id]).toMatchObject({ product_id: P_UTD, sleeves: "Short-Sleeved" });
     await kickioOwner`delete from public.sales_history where id in (${bad.id}, ${ok.id})`;
+  });
+  it("sends each new alert to a linked Telegram chat once, and pauses a blocked chat", async () => {
+    const owner = postgres(url("kickbuy_test_app"), { max: 1, onnotice: () => {} });
+    const USER = "00000000-0000-0000-0000-0000000000e1";
+    await owner`insert into auth.users (id) values (${USER})`;
+    await owner`insert into kickbuy.app_users (user_id, email, role) values (${USER}, 'buyer@example.com', 'buyer')`;
+    await owner`
+      insert into kickbuy.telegram_links (user_id, chat_id, linked_at)
+      values (${USER}, 4242, now() - interval '1 hour')
+    `;
+    // A fresh alert to send.
+    await kickioOwner`
+      insert into public.listings (id, title, product_id, size, condition, status, price_cents, updated_at)
+      values ('20000000-0000-0000-0000-000000000099', 'Shirt', ${P_UTD}, 'L', 'Very Good', 'active', 3000, now())
+    `;
+    await runScan(db, { trigger: "manual" });
+
+    const calls: { method: string; body: Record<string, unknown> }[] = [];
+    let blocked = false;
+    vi.stubEnv("TELEGRAM_BOT_TOKEN", "123:test");
+    vi.stubGlobal("fetch", async (input: string, init: { body: string }) => {
+      const method = input.split("/").pop()!;
+      calls.push({ method, body: JSON.parse(init.body) });
+      if (blocked) return new Response(JSON.stringify({ ok: false, error_code: 403, description: "Forbidden: bot was blocked by the user" }));
+      return new Response(JSON.stringify({ ok: true, result: { message_id: calls.length } }));
+    });
+    try {
+      const first = await deliverTelegramAlerts(db.app);
+      expect(first.sent).toBeGreaterThan(0);
+      const sends = calls.filter((c) => c.method === "sendMessage" || c.method === "sendPhoto");
+      expect(sends.every((c) => c.body.chat_id === "4242")).toBe(true);
+      expect(String(sends[0].body.text ?? sends[0].body.caption)).toMatch(/opportunity|Price drop/);
+
+      // Nothing is sent twice.
+      calls.length = 0;
+      expect(await deliverTelegramAlerts(db.app)).toEqual({ sent: 0, failed: 0 });
+      expect(calls).toHaveLength(0);
+
+      // A new alert to a chat that blocked the bot: the link is paused.
+      await kickioOwner`update public.listings set price_cents = 2000, updated_at = now() where id = '20000000-0000-0000-0000-000000000099'`;
+      await runScan(db, { trigger: "manual" });
+      blocked = true;
+      const r = await deliverTelegramAlerts(db.app);
+      expect(r.failed).toBe(1);
+      const [link] = await owner`select paused from kickbuy.telegram_links where user_id = ${USER}`;
+      expect(link.paused).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+      await owner.end();
+    }
   });
 });
 

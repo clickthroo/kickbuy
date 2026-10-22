@@ -3,7 +3,10 @@ import { app, kickio } from "@/lib/db";
 import { dateTime } from "@/lib/format";
 import { saleSourceLabel } from "@/lib/labels";
 import { loadSettings } from "@/lib/settings";
+import { tg, telegramEnabled } from "@/lib/telegram/api";
+import { appUrl } from "@/lib/telegram/deliver";
 import { SettingsForm } from "./settings-form";
+import { type TelegramLink, TelegramSettings } from "./telegram-settings";
 
 export default async function SettingsPage() {
   const user = await requireUser();
@@ -26,6 +29,23 @@ export default async function SettingsPage() {
     if (!sources.some((x) => x.value === s)) sources.push({ value: s, label: saleSourceLabel(s), count: 0 });
   }
 
+  const telegram = telegramEnabled();
+  const [linkRow] = await app()<(NonNullable<TelegramLink> & { chat_id: string | null })[]>`
+    select chat_id::text, paused, min_discount_pct, include_needs_check, live_only, quiet_from_hour, quiet_to_hour
+    from kickbuy.telegram_links where user_id = ${user.id}
+  `;
+  const link: TelegramLink = linkRow ? { ...linkRow, linked: linkRow.chat_id !== null } : null;
+  const webhook =
+    telegram && hasRole(user, "owner")
+      ? await tg<{ url: string; last_error_message?: string }>("getWebhookInfo")
+          .then((w) => ({
+            url: w.url,
+            ok: w.url === `${appUrl()}/api/telegram` && !w.last_error_message,
+            error: w.last_error_message ?? (w.url ? `pointing at ${w.url}` : null),
+          }))
+          .catch((e) => ({ url: "", ok: false, error: e instanceof Error ? e.message : String(e) }))
+      : null;
+
   return (
     <div className="max-w-3xl space-y-4">
       <div>
@@ -47,6 +67,13 @@ export default async function SettingsPage() {
         }}
         sources={sources}
         shops={shops}
+      />
+      <TelegramSettings
+        enabled={telegram}
+        isOwner={hasRole(user, "owner")}
+        webhook={webhook}
+        link={link}
+        appThreshold={settings.minDiscountPct}
       />
     </div>
   );

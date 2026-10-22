@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { audit, requireUser } from "@/lib/auth";
 import { scanNow } from "@/lib/scan";
+import { sendTelegramAlerts } from "@/lib/telegram";
 
 export type ScanActionResult = { message: string; ok: boolean } | null;
 
@@ -12,6 +13,7 @@ export async function runScanAction(_prev: ScanActionResult, form: FormData): Pr
   try {
     const r = await scanNow({ trigger: "manual", userId: user.id, forceFull: full });
     revalidatePath("/", "layout");
+    await sendTelegramAlerts().catch((e) => console.error("[scan] telegram", e));
     if (!r.ran) return { ok: false, message: r.reason };
     const s = r.stats;
     return {
