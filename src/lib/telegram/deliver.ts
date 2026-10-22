@@ -102,7 +102,7 @@ export async function deliverTelegramAlerts(sql: postgres.Sql, now = new Date())
 }
 
 // A photo message when there's an image Telegram can fetch, otherwise text.
-async function sendAlert(chatId: string, a: AlertForTelegram, canAct: boolean): Promise<number> {
+export async function sendAlert(chatId: string, a: AlertForTelegram, canAct: boolean): Promise<number> {
   const reply_markup = { inline_keyboard: alertButtons(a, appUrl(), canAct) };
   const text = alertText(a);
   if (a.image_url && /^https:\/\//.test(a.image_url)) {

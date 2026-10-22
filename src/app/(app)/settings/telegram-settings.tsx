@@ -4,6 +4,7 @@ import {
   connectTelegram,
   disconnectTelegram,
   saveTelegramPrefs,
+  sendTelegramTest,
   setTelegramPaused,
   setupTelegramWebhook,
   type TelegramResult,
@@ -35,6 +36,7 @@ export function TelegramSettings({ enabled, isOwner, webhook, link, appThreshold
   const [pending, start] = useTransition();
   const [saved, save, saving] = useActionState(saveTelegramPrefs, null);
   const [setup, setSetup] = useState<TelegramResult>(null);
+  const [test, setTest] = useState<TelegramResult>(null);
 
   return (
     <div className="card space-y-4 p-4 text-sm">
@@ -78,6 +80,14 @@ export function TelegramSettings({ enabled, isOwner, webhook, link, appThreshold
             </button>
             <button
               type="button"
+              className="btn btn-secondary"
+              disabled={pending}
+              onClick={() => start(async () => setTest(await sendTelegramTest()))}
+            >
+              Send test alert
+            </button>
+            <button
+              type="button"
               className="btn btn-secondary text-warn!"
               disabled={pending}
               onClick={() => {
@@ -88,6 +98,7 @@ export function TelegramSettings({ enabled, isOwner, webhook, link, appThreshold
             </button>
           </div>
 
+          {test && <p className={test.ok ? "text-muted" : "text-warn"}>{test.message}</p>}
           <form action={save} className="grid gap-3 sm:grid-cols-2">
             <label>
               <span className="label">Only alert at or above (%)</span>

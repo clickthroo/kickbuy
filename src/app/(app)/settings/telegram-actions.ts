@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { audit, requireUser } from "@/lib/auth";
 import { app } from "@/lib/db";
 import { getBotUsername, tg, telegramEnabled, webhookSecret } from "@/lib/telegram/api";
-import { appUrl } from "@/lib/telegram/deliver";
+import { appUrl, sendAlert } from "@/lib/telegram/deliver";
+import type { AlertForTelegram } from "@/lib/telegram/message";
 
 export type TelegramResult = { ok: boolean; message: string; link?: string } | null;
 
@@ -93,6 +94,39 @@ export async function setupTelegramWebhook(): Promise<TelegramResult> {
     await audit(user.id, "telegram.webhook_set", { url: `${appUrl()}/api/telegram` });
     revalidatePath("/settings");
     return { ok: true, message: `Bot connected to ${appUrl()}.` };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// Sends the current best open opportunity to your linked chat, marked as a
+// test. Nothing is recorded as delivered, so the real alert still arrives.
+export async function sendTelegramTest(): Promise<TelegramResult> {
+  const user = await requireUser();
+  if (!telegramEnabled()) return { ok: false, message: "The Telegram bot isn't set up yet." };
+  const sql = app();
+  const [link] = await sql<{ chat_id: string | null }[]>`
+    select chat_id::text from kickbuy.telegram_links where user_id = ${user.id}
+  `;
+  if (!link?.chat_id) return { ok: false, message: "Connect Telegram first." };
+  const [a] = await sql<AlertForTelegram[]>`
+    select 'test' as alert_id, 'new' as kind, o.ask_pence, o.ref_price_pence, o.discount_pct, null::int as previous_ask_pence,
+           o.id as opportunity_id, o.title, o.condition, o.size, o.manufacturer, o.source_name, o.source_url,
+           o.pre_live, o.image_url, o.ask_currency, o.ref_sold_at, o.ref_source, o.saving_pence,
+           o.confidence, o.needs_review, o.match_notes
+    from kickbuy.opportunities o
+    where o.removed_at is null and o.status in ('new', 'watching')
+    order by o.discount_pct desc limit 1
+  `;
+  try {
+    if (!a) {
+      await tg("sendMessage", { chat_id: link.chat_id, text: "🧪 Test from KickBuy: Telegram alerts are working. (No open opportunities right now.)" });
+    } else {
+      await tg("sendMessage", { chat_id: link.chat_id, text: "🧪 Test alert from KickBuy: your best open opportunity right now ↓" });
+      await sendAlert(link.chat_id, a, user.role === "buyer" || user.role === "owner");
+    }
+    await audit(user.id, "telegram.test", {});
+    return { ok: true, message: "Sent. Check Telegram." };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
