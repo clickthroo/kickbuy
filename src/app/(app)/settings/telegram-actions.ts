@@ -112,7 +112,7 @@ export async function sendTelegramTest(): Promise<TelegramResult> {
   const [a] = await sql<AlertForTelegram[]>`
     select 'test' as alert_id, 'new' as kind, o.ask_pence, o.ref_price_pence, o.discount_pct, null::int as previous_ask_pence,
            o.id as opportunity_id, o.title, o.condition, o.size, o.manufacturer, o.source_name, o.source_url,
-           o.pre_live, o.image_url, o.ask_currency, o.ref_sold_at, o.ref_source, o.saving_pence,
+           o.pre_live, o.image_url, o.ask_currency, o.ref_sold_at, o.ref_source, o.ref_condition, o.saving_pence,
            o.confidence, o.needs_review, o.match_notes
     from kickbuy.opportunities o
     where o.removed_at is null and o.status in ('new', 'watching')

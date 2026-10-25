@@ -44,3 +44,12 @@ describe("matchShirts: names and numbers", () => {
     });
   });
 });
+
+describe("matchShirts: condition", () => {
+  it("accepts a sale in the same or a worse condition, never a better one", () => {
+    expect(matchShirts(shirt(), shirt(), opts)).toMatchObject({ ok: true, sameCondition: true, confidence: "medium" });
+    expect(matchShirts(shirt(), shirt({ condition: "Good" }), opts)).toMatchObject({ ok: true, sameCondition: false, confidence: "medium" });
+    expect(matchShirts(shirt(), shirt({ condition: "Mint" }), opts)).toEqual({ ok: false, reason: "sold in better condition" });
+    expect(matchShirts(shirt(), shirt({ condition: null }), opts)).toEqual({ ok: false, reason: "condition unknown" });
+  });
+});

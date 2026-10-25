@@ -3,11 +3,13 @@
 //
 // Deterministic only. Matching uses Kickio's product identity first (the same
 // shirt in Kickio's catalogue), then its structured attributes; never titles
-// or descriptions. Condition must always be the same grade.
+// or descriptions. A sale must be in the same condition as the listing, or a
+// worse one: a better-condition listing that's still cheaper is a deal.
 
 import {
   canonicalCondition,
   type Condition,
+  CONDITIONS,
   norm,
   normaliseManufacturer,
   normaliseNumber,
@@ -98,6 +100,7 @@ export type MatchResult =
       confidence: Confidence;
       basis: "product" | "attributes";
       sizeExact: boolean;
+      sameCondition: boolean;
       notes: string[];
     };
 
@@ -112,9 +115,13 @@ const SOFT: { key: "manufacturer" | "gender" | "issue" | "sleeves"; label: strin
 ];
 
 export function matchShirts(listing: Shirt, sale: Shirt, opts: { requireExactSize: boolean }): MatchResult {
-  // Condition is mandatory and must be the same grade.
+  // Condition is mandatory. A sale in better condition says nothing about
+  // what this one is worth; a sale in worse condition is a floor.
   if (!listing.condition || !sale.condition) return { ok: false, reason: "condition unknown" };
-  if (listing.condition !== sale.condition) return { ok: false, reason: "different condition" };
+  if (CONDITIONS.indexOf(sale.condition) < CONDITIONS.indexOf(listing.condition)) {
+    return { ok: false, reason: "sold in better condition" };
+  }
+  const sameCondition = listing.condition === sale.condition;
 
   const sameProduct = listing.productId !== null && listing.productId === sale.productId;
   const notes: string[] = [];
@@ -170,7 +177,7 @@ export function matchShirts(listing: Shirt, sale: Shirt, opts: { requireExactSiz
     notes.push(ls.key && ss.key ? `size ${ss.key} vs ${ls.key}` : "size not comparable");
     if (confidence === "high") confidence = "medium";
   }
-  return { ok: true, confidence, basis: sameProduct ? "product" : "attributes", sizeExact, notes };
+  return { ok: true, confidence, basis: sameProduct ? "product" : "attributes", sizeExact, sameCondition, notes };
 }
 
 // A listing must never be valued against its own sale (a relisted item, or a

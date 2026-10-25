@@ -1,5 +1,6 @@
 // What a Telegram alert says and who gets it. Pure functions: no I/O.
 
+import { canonicalCondition } from "../engine/normalise";
 import { date, money, pct } from "../format";
 import { saleSourceLabel } from "../labels";
 
@@ -22,6 +23,7 @@ export type AlertForTelegram = {
   ask_currency: string;
   ref_sold_at: Date;
   ref_source: string;
+  ref_condition: string | null;
   saving_pence: number;
   confidence: "high" | "medium" | "low";
   needs_review: boolean;
@@ -77,7 +79,8 @@ export function alertText(a: AlertForTelegram): string {
     a.kind === "price_drop" && a.previous_ask_pence
       ? `<b>Ask ${money(a.ask_pence, ccy)}</b> (was ${money(a.previous_ask_pence, ccy)})`
       : `<b>Ask ${money(a.ask_pence, ccy)}</b>`,
-    `Lowest sold ${money(a.ref_price_pence, ccy)} (${date(a.ref_sold_at)}, ${esc(saleSourceLabel(a.ref_source))})`,
+    `Lowest sold ${money(a.ref_price_pence, ccy)} (${date(a.ref_sold_at)}, ${esc(saleSourceLabel(a.ref_source))}` +
+      (soldWorse(a) ? `, in worse condition: ${esc(a.ref_condition ?? "")})` : ")"),
     `Saving <b>${money(a.saving_pence, ccy)}</b>`,
   ];
   if (a.needs_review) {
@@ -86,6 +89,11 @@ export function alertText(a: AlertForTelegram): string {
   }
   const text = lines.join("\n");
   return text.length > 1000 ? `${text.slice(0, 997)}…` : text;
+}
+
+// The reference sale was in a worse condition than this listing.
+function soldWorse(a: AlertForTelegram): boolean {
+  return a.ref_condition !== null && a.ref_condition !== canonicalCondition(a.condition);
 }
 
 // Link buttons for everyone; action buttons only for buyers and owners.

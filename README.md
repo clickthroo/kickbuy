@@ -1,9 +1,9 @@
 # KickBuy
 
 Kickio's internal buying-intelligence tool. It watches every Kickio listing,
-live and in the review queue, and flags shirts listed well below the last
-sale of the same shirt in the same condition, so Kickio can spot buying
-opportunities first.
+live and in the review queue, and flags shirts listed well below the lowest
+recent sale of the same shirt in the same condition (or, when there's none,
+in a worse condition), so Kickio can spot buying opportunities first.
 
 KickBuy is **read-only** towards Kickio: it never approves, rejects, reserves,
 buys or edits anything. It reads Kickio's database through a narrow set of

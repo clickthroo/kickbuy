@@ -68,13 +68,51 @@ describe("reference sale", () => {
     expect(r.discountPct).toBe(-33.33);
   });
 
-  it("never values against a sale in a different condition", () => {
+  it("never values against a sale in a better condition", () => {
     const r = evaluate([sale({ condition: "Mint" })]);
-    expect(r.kind).toBe("insufficient_data");
+    expect(r).toEqual({ kind: "insufficient_data", reasons: ["1 sale of this shirt ruled out: sold in better condition"] });
+  });
+
+  it("values a better listing against a sale in worse condition when there's none in the same", () => {
+    // Very Good listing at £80; a Good one sold for £120.
+    const r = priced(evaluate([sale({ sale_id: "good", condition: "Good" }), sale({ sale_id: "fair", condition: "Fair", price_cents: 11000 })]));
+    expect(r.reference).toMatchObject({ saleId: "fair", condition: "Fair", sameCondition: false });
+    expect(r.discountPct).toBe(27.27);
+    expect(r.qualifies).toBe(true);
+    expect(r.recent.map((c) => c.saleId)).toEqual(["good", "fair"]);
+  });
+
+  it("prefers same-condition sales over cheaper ones in worse condition", () => {
+    const r = priced(
+      evaluate([sale({ sale_id: "same", price_cents: 12000 }), sale({ sale_id: "worse", condition: "Good", price_cents: 8500 })]),
+    );
+    expect(r.reference).toMatchObject({ saleId: "same", sameCondition: true });
+    expect(r.recent.map((c) => c.saleId)).toEqual(["same"]);
+    expect(r.discountPct).toBe(33.33);
+  });
+
+  it("prefers a fresh worse-condition sale over a stale same-condition one", () => {
+    const r = priced(
+      evaluate([
+        sale({ sale_id: "stale-same", sold_at: new Date("2025-01-01") }),
+        sale({ sale_id: "fresh-worse", condition: "Good", price_cents: 11000 }),
+      ]),
+    );
+    expect(r.reference).toMatchObject({ saleId: "fresh-worse", stale: false });
+  });
+
+  it("with only stale sales, uses the same condition first", () => {
+    const r = priced(
+      evaluate([
+        sale({ sale_id: "stale-worse", condition: "Good", sold_at: new Date("2025-03-01") }),
+        sale({ sale_id: "stale-same", sold_at: new Date("2025-01-01") }),
+      ]),
+    );
+    expect(r.reference).toMatchObject({ saleId: "stale-same", stale: true });
   });
 
   it("says insufficient data when there are no sales", () => {
-    expect(evaluate([])).toEqual({ kind: "insufficient_data", reasons: ["No sales of this shirt in this condition"] });
+    expect(evaluate([])).toEqual({ kind: "insufficient_data", reasons: ["No sales of this shirt in this condition or worse"] });
   });
 
   it("ignores the listing's own earlier sale", () => {

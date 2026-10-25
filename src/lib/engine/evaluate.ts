@@ -3,10 +3,12 @@
 //
 // The reference is always one real sale: the lowest-priced valid sale of the
 // same shirt in the same condition within the sale-age limit, so a listing is
-// only flagged when it's below every recent comparable sale. Median and recent
-// sales are shown for context only and never replace it. Money is in pence
-// (integers).
+// only flagged when it's below every recent comparable sale. With no such
+// sale, the lowest sale in a worse condition stands in: a better shirt for
+// less than a worse one sold for is still a deal. Median and recent sales are
+// shown for context only and never replace it. Money is in pence (integers).
 
+import type { Condition } from "./normalise";
 import { bucketKey, type Confidence, CONFIDENCE_RANK, isSelfSale, matchShirts, type Shirt, toShirt, unmatchableReasons } from "./match";
 import type { FxLookup, InventoryRow, SaleRow, Settings, TeamLookup } from "./types";
 
@@ -16,6 +18,8 @@ export type Comparable = {
   source: string;
   url: string | null;
   size: string | null;
+  condition: Condition;
+  sameCondition: boolean; // false: sold in a worse condition than the listing
   originalPence: number;
   currency: string;
   fxRate: number | null; // units of `currency` per 1 GBP, when converted
@@ -128,9 +132,11 @@ function cheaper(a: Comparable, b: Comparable): number {
   return a.pence - b.pence || better(a, b);
 }
 
-// Best match first: more confident, then same size, then most recent.
+// Best match first: same condition, more confident, then same size, then
+// most recent.
 function better(a: Comparable, b: Comparable): number {
   return (
+    Number(b.sameCondition) - Number(a.sameCondition) ||
     CONFIDENCE_RANK[b.confidence] - CONFIDENCE_RANK[a.confidence] ||
     Number(b.sizeExact) - Number(a.sizeExact) ||
     b.soldAt.getTime() - a.soldAt.getTime()
@@ -174,6 +180,8 @@ export function evaluateListing(
       source: row.source,
       url: row.sale_url,
       size: row.size,
+      condition: saleShirt.condition!,
+      sameCondition: m.sameCondition,
       originalPence: row.price_cents,
       currency: row.currency.toUpperCase(),
       fxRate: converted.rate,
@@ -192,14 +200,16 @@ export function evaluateListing(
       kind: "insufficient_data",
       reasons: why.length
         ? why.map(([r, n]) => `${n} sale${n === 1 ? "" : "s"} of this shirt ruled out: ${r}`)
-        : ["No sales of this shirt in this condition"],
+        : ["No sales of this shirt in this condition or worse"],
     };
   }
 
-  // The lowest sale within the age limit. Older sales are only used when
-  // there is nothing fresher: then the best, most recent one, marked stale.
+  // The lowest sale in the same condition within the age limit, else the
+  // lowest in a worse condition. Older sales are only used when there is
+  // nothing fresher: then the best, most recent one, marked stale.
   const fresh = comparables.filter((c) => !c.stale);
-  const pool = fresh.length > 0 ? fresh : comparables;
+  const freshSame = fresh.filter((c) => c.sameCondition);
+  const pool = freshSame.length > 0 ? freshSame : fresh.length > 0 ? fresh : comparables;
   const reference = [...pool].sort(fresh.length > 0 ? cheaper : better)[0];
 
   const byDate = (a: Comparable, b: Comparable) => b.soldAt.getTime() - a.soldAt.getTime();

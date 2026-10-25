@@ -39,6 +39,7 @@ export type OpportunityRow = {
   ref_source: string;
   ref_url: string | null;
   ref_size: string | null;
+  ref_condition: string | null;
   ref_stale: boolean;
   discount_pct: string;
   saving_pence: number;
@@ -54,6 +55,7 @@ export type OpportunityRow = {
     source: string;
     url: string | null;
     size: string | null;
+    condition?: string; // absent on opportunities valued before it was recorded
     confidence: Confidence;
   }[];
   median_pence: number | null;

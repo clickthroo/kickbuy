@@ -20,6 +20,7 @@ const alert = (o: Partial<AlertForTelegram> = {}): AlertForTelegram => ({
   ask_currency: "GBP",
   ref_sold_at: new Date("2026-09-12T10:00:00Z"),
   ref_source: "cfs",
+  ref_condition: "Very Good",
   saving_pence: 5201,
   confidence: "low",
   needs_review: true,
@@ -45,6 +46,13 @@ describe("telegram alert message", () => {
     expect(text).toContain("Lowest sold £82 (12 Sept 2026, Classic Football Shirts)");
     expect(text).toContain("Saving <b>£52.01</b>");
     expect(text).toContain("⚠️ Needs a check: number missing on the listing; size M vs XL");
+  });
+
+  it("says when the reference sold in a worse condition", () => {
+    expect(alertText(alert({ ref_condition: "Good" }))).toContain(
+      "Lowest sold £82 (12 Sept 2026, Classic Football Shirts, in worse condition: Good)",
+    );
+    expect(alertText(alert({ ref_condition: null }))).toContain("Lowest sold £82 (12 Sept 2026, Classic Football Shirts)\n");
   });
 
   it("shows the previous price on a price drop and escapes HTML", () => {

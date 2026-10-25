@@ -6,7 +6,7 @@ import { hasRole, requireUser } from "@/lib/auth";
 import { getOpportunity } from "@/lib/data/opportunities";
 import { age, date, dateTime, money, pct } from "@/lib/format";
 import { kickioListingUrl, kickioReviewQueueUrl } from "@/lib/kickio-links";
-import { CONFIDENCE_LABELS, listingStatusLabel, saleSourceLabel } from "@/lib/labels";
+import { CONFIDENCE_LABELS, listingStatusLabel, saleSourceLabel, soldInWorseCondition } from "@/lib/labels";
 import { restoreOpportunity, setOpportunityStatus } from "../actions";
 import { RemoveButton } from "@/components/remove-button";
 
@@ -133,6 +133,10 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
             <Row k="Sold on" v={`${date(o.ref_sold_at)} (${age(o.ref_sold_at)})`} />
             <Row k="Where" v={saleSourceLabel(o.ref_source)} />
             <Row k="Size" v={o.ref_size} />
+            <Row
+              k="Condition"
+              v={soldInWorseCondition(o) ? `${o.ref_condition} (worse than this one)` : (o.ref_condition ?? o.condition)}
+            />
             <Row k="Match" v={CONFIDENCE_LABELS[o.confidence]} />
           </dl>
           {o.ref_url && (
@@ -171,6 +175,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
               <th>Sold</th>
               <th>Where</th>
               <th>Size</th>
+              <th>Condition</th>
               <th className="num">Price</th>
             </tr>
           </thead>
@@ -191,6 +196,7 @@ export default async function OpportunityPage({ params }: PageProps<"/opportunit
                   )}
                 </td>
                 <td>{s.size ?? "—"}</td>
+                <td>{s.condition ?? "—"}</td>
                 <td className="num">
                   {money(s.pence, ccy)}
                   {s.currency !== ccy && <span className="text-xs text-muted"> ({money(s.originalPence, s.currency)})</span>}

@@ -24,7 +24,7 @@ const P_UTD = "10000000-0000-0000-0000-000000000001";
 const P_ARS = "10000000-0000-0000-0000-000000000002";
 const L1 = "20000000-0000-0000-0000-000000000001"; // pending, £80 vs £120 → opportunity
 const L2 = "20000000-0000-0000-0000-000000000002"; // active, £110 → not yet
-const L3 = "20000000-0000-0000-0000-000000000003"; // Mint, no Mint sales
+const L3 = "20000000-0000-0000-0000-000000000003"; // Good, only sold in better condition
 const L4 = "20000000-0000-0000-0000-000000000004"; // Arsenal; only valid sale is close in price
 const L5 = "20000000-0000-0000-0000-000000000005"; // "Spurs" alias
 const L6 = "20000000-0000-0000-0000-000000000006"; // draft: out of scope
@@ -376,7 +376,7 @@ async function seed(sql: postgres.Sql) {
   await insert(sql, "public.listings", [
     listing(L1, { product_id: P_UTD, status: "pending", source: "scrape", source_url: "https://kit.example/p/1" }),
     listing(L2, { product_id: P_UTD, price_cents: 11000 }),
-    listing(L3, { product_id: P_UTD, condition: "Mint" }),
+    listing(L3, { product_id: P_UTD, condition: "Good" }),
     listing(L4, { product_id: P_ARS, price_cents: 6500 }),
     listing(L5, { ...utd, team: "Spurs", season: "2010-11", price_cents: 3000 }),
     listing(L6, { product_id: P_UTD, status: "draft", price_cents: 100 }),

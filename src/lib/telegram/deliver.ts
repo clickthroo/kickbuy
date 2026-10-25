@@ -34,7 +34,7 @@ export async function deliverTelegramAlerts(sql: postgres.Sql, now = new Date())
              (select min(p.ask_pence) from kickbuy.alerts p
               where p.listing_id = a.listing_id and p.created_at < a.created_at)::int as previous_ask_pence,
              o.id as opportunity_id, o.title, o.condition, o.size, o.manufacturer, o.source_name, o.source_url,
-             o.pre_live, o.image_url, o.ask_currency, o.ref_sold_at, o.ref_source, o.saving_pence,
+             o.pre_live, o.image_url, o.ask_currency, o.ref_sold_at, o.ref_source, o.ref_condition, o.saving_pence,
              o.confidence, o.needs_review, o.match_notes
       from kickbuy.alerts a
       join kickbuy.opportunities o on o.id = a.opportunity_id

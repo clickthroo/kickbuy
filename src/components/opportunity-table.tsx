@@ -4,7 +4,7 @@ import { RemoveButton } from "@/components/remove-button";
 import { displayImageUrl } from "@/lib/images";
 import type { OpportunityRow } from "@/lib/data/opportunities";
 import { date, money, pct } from "@/lib/format";
-import { listingStatusLabel, saleSourceLabel } from "@/lib/labels";
+import { listingStatusLabel, saleSourceLabel, soldInWorseCondition } from "@/lib/labels";
 import { ConfidenceBadge, PreLiveBadge, StaleBadge, StatusBadge } from "./badges";
 
 // A table on wider screens; a list of cards on phones.
@@ -53,6 +53,7 @@ export function OpportunityTable({
             </dl>
             <p className="mt-2 text-xs text-muted">
               Saving {money(o.saving_pence, o.ask_currency)} · sold {date(o.ref_sold_at)} on {saleSourceLabel(o.ref_source)}
+              {soldInWorseCondition(o) && <> in worse condition ({soldInWorseCondition(o)})</>}
             </p>
             <div className="mt-2 flex flex-wrap gap-1">
               <StatusBadge status={o.status} />
@@ -101,6 +102,7 @@ export function OpportunityTable({
                   <div className="text-xs text-muted">
                     {date(o.ref_sold_at)} · {saleSourceLabel(o.ref_source)}
                   </div>
+                  {soldInWorseCondition(o) && <div className="text-xs text-muted">in {soldInWorseCondition(o)} condition</div>}
                   {o.ref_stale && <StaleBadge />}
                 </td>
                 <td className="num text-base font-semibold text-good">{pct(o.discount_pct)}</td>

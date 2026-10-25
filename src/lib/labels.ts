@@ -1,4 +1,5 @@
 import type { Confidence } from "./engine/match";
+import { canonicalCondition } from "./engine/normalise";
 import type { OpportunityStatus } from "./scan/lifecycle";
 
 export const STATUS_LABELS: Record<OpportunityStatus, string> = {
@@ -40,4 +41,10 @@ export function listingStatusLabel(status: string, prepStatus: string | null): s
   if (status === "reserved") return "Live, in someone's checkout";
   if (status === "active") return "Live";
   return status;
+}
+
+// The reference sale's condition when it was worse than the listing's (a
+// better shirt for less), else null.
+export function soldInWorseCondition(o: { condition: string; ref_condition: string | null }): string | null {
+  return o.ref_condition && o.ref_condition !== canonicalCondition(o.condition) ? o.ref_condition : null;
 }
