@@ -9,7 +9,7 @@ export default async function SetPasswordPage() {
   return (
     <AuthShell title="Choose a password">
       <SetPasswordForm />
-      <p className="mt-4 text-xs text-muted">Next you&apos;ll set up an authenticator app for two-step verification.</p>
+      <p className="mt-4 text-xs text-muted">Next you&apos;ll confirm with your authenticator app, or set one up if this is a new account.</p>
     </AuthShell>
   );
 }

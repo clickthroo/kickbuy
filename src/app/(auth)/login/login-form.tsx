@@ -1,5 +1,7 @@
 "use client";
+import Link from "next/link";
 import { useActionState } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { signIn } from "./actions";
 
 export function LoginForm() {
@@ -11,8 +13,13 @@ export function LoginForm() {
         <input name="email" type="email" autoComplete="username" required className="input mt-1" />
       </label>
       <label className="block text-sm">
-        Password
-        <input name="password" type="password" autoComplete="current-password" required className="input mt-1" />
+        <span className="flex items-baseline justify-between gap-2">
+          Password
+          <Link href="/forgot-password" className="text-xs text-muted underline">
+            Forgot password?
+          </Link>
+        </span>
+        <PasswordInput name="password" autoComplete="current-password" required />
       </label>
       {error && <p className="text-sm text-warn">{error}</p>}
       <button className="btn w-full justify-center" disabled={pending}>

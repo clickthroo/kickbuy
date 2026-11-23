@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 // /api/cron, /api/setup and /api/telegram authenticate with their own secrets instead of a session.
-const PUBLIC_PATHS = ["/login", "/auth/confirm", "/api/cron", "/api/setup", "/api/telegram"];
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth/confirm", "/api/cron", "/api/setup", "/api/telegram"];
 
 // Refreshes the Supabase session cookie on every request and bounces
 // signed-out visitors to /login. This is only the optimistic first gate: every

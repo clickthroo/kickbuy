@@ -1,22 +1,14 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { audit, type Role, requireUser } from "@/lib/auth";
 import { app } from "@/lib/db";
+import { appOrigin } from "@/lib/origin";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 const ROLES: Role[] = ["owner", "buyer", "viewer"];
 const UUID = /^[0-9a-f-]{36}$/i;
 
 export type LinkResult = { error?: string; link?: string; email?: string } | null;
-
-async function appOrigin() {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
-}
 
 // Invite links are generated here and handed to the owner to pass on, so
 // KickBuy doesn't depend on Supabase's email templates or SMTP setup.

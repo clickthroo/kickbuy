@@ -1,5 +1,6 @@
 "use client";
 import { useActionState } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { setPassword } from "./actions";
 
 export function SetPasswordForm() {
@@ -8,11 +9,11 @@ export function SetPasswordForm() {
     <form action={action} className="space-y-3">
       <label className="block text-sm">
         New password
-        <input name="password" type="password" autoComplete="new-password" minLength={12} required className="input mt-1" />
+        <PasswordInput name="password" autoComplete="new-password" minLength={12} required />
       </label>
       <label className="block text-sm">
         Confirm password
-        <input name="confirm" type="password" autoComplete="new-password" minLength={12} required className="input mt-1" />
+        <PasswordInput name="confirm" autoComplete="new-password" minLength={12} required />
       </label>
       {error && <p className="text-sm text-warn">{error}</p>}
       <button className="btn w-full justify-center" disabled={pending}>
