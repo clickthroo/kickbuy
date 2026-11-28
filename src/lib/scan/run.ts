@@ -20,6 +20,7 @@ import { notAFootballShirt, outsideSettings } from "../engine/scope";
 import type { FxLookup, InventoryRow, SaleRow } from "../engine/types";
 import { type AppSettings, loadSettings } from "../settings";
 import { decide, type ExistingOpportunity } from "./lifecycle";
+import { loadSourceChecks } from "./source-check";
 
 export type Databases = { kickio: postgres.Sql; app: postgres.Sql };
 
@@ -225,11 +226,15 @@ async function scan(
   // any opportunity already raised for one is removed for good. Sizes and
   // conditions outside the settings aren't valued either; their opportunities
   // expire, and come back if the settings change.
+  // The shop's own page (checked after earlier scans) can also say it isn't
+  // a shirt, or that the listing has ended.
   const listingsScanned = listings.length;
   const outOfScope = new Map<string, GoneReason>();
+  const sourceChecks = await loadSourceChecks(db.app);
   listings = listings.filter((l) => {
-    const notShirt = notAFootballShirt(l);
-    const reason = notShirt ?? outsideSettings(l, settings);
+    const check = sourceChecks.get(l.listing_id);
+    const notShirt = notAFootballShirt(l) ?? check?.not_shirt ?? null;
+    const reason = notShirt ?? (check?.ended ? "The shop listing has ended" : null) ?? outsideSettings(l, settings);
     if (!reason) return true;
     if (existing.has(l.listing_id)) {
       outOfScope.set(l.listing_id, { reason, remove: notShirt !== null });

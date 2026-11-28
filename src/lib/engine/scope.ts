@@ -64,6 +64,20 @@ function decodeEntities(s: string): string {
     .replace(/&nbsp;/g, " ");
 }
 
+// The shop's own listing title (from eBay or Vinted, where the URL is just an
+// item number). Titles are short and say what the item is, so single words
+// are enough here: "Chelsea Football Shirt 2015/2016 Training Excellent".
+const TITLE_WORDS =
+  /\b(training|polo|jacket|track ?top|tracksuit|hoodie|hoody|hooded|sweatshirt|sweater|jumper|fleece|shorts|socks|scarf|t-shirt|tee|vest|gilet|pre-?match|warm[- ]?up|fan version|fan shirt|baby ?grow|bib|rugby|cricket|basketball|nba|nfl|anorak|windbreaker|presentation|leisure|mini ?kit|full kit)\b/;
+
+export function titleSaysNotAShirt(title: string | null | undefined): string | null {
+  if (!title) return null;
+  const t = decodeEntities(title).toLowerCase();
+  if (/reversible/.test(t)) return null;
+  const m = TITLE_WORDS.exec(t);
+  return m ? `Not a football shirt: the shop's title says "${m[1]}"` : null;
+}
+
 // Adult sizes the Settings page offers, smallest first.
 export const LISTING_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
 

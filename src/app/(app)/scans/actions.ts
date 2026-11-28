@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { audit, requireUser } from "@/lib/auth";
-import { scanNow } from "@/lib/scan";
+import { checkSourceListings, scanNow } from "@/lib/scan";
 import { sendTelegramAlerts } from "@/lib/telegram";
 
 export type ScanActionResult = { message: string; ok: boolean } | null;
@@ -12,6 +12,7 @@ export async function runScanAction(_prev: ScanActionResult, form: FormData): Pr
   await audit(user.id, full ? "scan.run_full" : "scan.run", {});
   try {
     const r = await scanNow({ trigger: "manual", userId: user.id, forceFull: full });
+    await checkSourceListings().catch((e) => console.error("[scan] source checks", e));
     revalidatePath("/", "layout");
     await sendTelegramAlerts().catch((e) => console.error("[scan] telegram", e));
     if (!r.ran) return { ok: false, message: r.reason };
