@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExternalLink } from "@/components/external-link";
+import { BulkSelection, SelectAllBox, SelectBox } from "@/components/bulk-select";
 import { RemoveButton } from "@/components/remove-button";
 import { displayImageUrl } from "@/lib/images";
 import type { OpportunityRow } from "@/lib/data/opportunities";
@@ -7,7 +8,8 @@ import { date, money, pct } from "@/lib/format";
 import { listingStatusLabel, saleSourceLabel, soldInWorseCondition } from "@/lib/labels";
 import { ConfidenceBadge, PreLiveBadge, StaleBadge, StatusBadge } from "./badges";
 
-// A table on wider screens; a list of cards on phones.
+// A table on wider screens; a list of cards on phones. People who can
+// remove opportunities can also tick several and remove them together.
 export function OpportunityTable({
   rows,
   empty,
@@ -18,12 +20,18 @@ export function OpportunityTable({
   canRemove?: boolean;
 }) {
   if (rows.length === 0) return <div className="card p-6 text-sm text-muted">{empty}</div>;
-  return (
+  const list = (
     <>
+      {canRemove && (
+        <div className="mb-2 md:hidden">
+          <SelectAllBox label />
+        </div>
+      )}
       <ul className="space-y-3 md:hidden">
         {rows.map((o) => (
           <li key={o.id} className="card relative p-3">
             <div className="flex gap-3">
+              {canRemove && <SelectBox id={o.id} title={o.title} />}
               <Thumb url={o.image_url} className="h-16 w-16" />
               <div className="min-w-0 flex-1 pr-10">
                 <Link href={`/opportunities/${o.id}`} className="font-medium leading-snug after:absolute after:inset-0">
@@ -69,6 +77,11 @@ export function OpportunityTable({
         <table className="table">
           <thead>
             <tr>
+              {canRemove && (
+                <th className="w-8">
+                  <SelectAllBox />
+                </th>
+              )}
               <th>Shirt</th>
               <th className="num">Ask</th>
               <th className="num">Lowest sold</th>
@@ -82,6 +95,11 @@ export function OpportunityTable({
           <tbody>
             {rows.map((o) => (
               <tr key={o.id} className="align-top">
+                {canRemove && (
+                  <td>
+                    <SelectBox id={o.id} title={o.title} />
+                  </td>
+                )}
                 <td className="min-w-64">
                   <div className="flex gap-3">
                     <Thumb url={o.image_url} className="h-12 w-12" />
@@ -125,6 +143,7 @@ export function OpportunityTable({
       </div>
     </>
   );
+  return canRemove ? <BulkSelection ids={rows.map((o) => o.id)}>{list}</BulkSelection> : list;
 }
 
 function details(o: OpportunityRow) {

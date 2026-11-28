@@ -27,6 +27,16 @@ export async function removeOpportunity(form: FormData) {
   if (form.get("from") === "detail") redirect("/");
 }
 
+// Remove several at once (the bulk bar on the opportunity lists).
+export async function removeOpportunities(ids: string[]): Promise<{ removed: number }> {
+  const user = await requireUser("buyer");
+  const valid = [...new Set(ids)].filter((id) => UUID.test(id)).slice(0, 500);
+  let removed = 0;
+  for (const id of valid) if (await removeForGood(user.id, id)) removed += 1;
+  revalidatePath("/", "layout");
+  return { removed };
+}
+
 export async function restoreOpportunity(form: FormData) {
   const user = await requireUser("buyer");
   const id = String(form.get("id") ?? "");
