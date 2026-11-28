@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonicalCondition, normaliseManufacturer, normaliseNumber, normalisePlayer, normaliseSeason, normaliseSize } from "./normalise";
+import { canonicalCondition, namesetFromUrl, normaliseManufacturer, normaliseNumber, normalisePlayer, normaliseSeason, normaliseSize, playerKey } from "./normalise";
 
 describe("canonicalCondition", () => {
   it("accepts Kickio grades in any case", () => {
@@ -52,5 +52,45 @@ describe("other attributes", () => {
   it("treats 'Other' manufacturer as unknown", () => {
     expect(normaliseManufacturer("Other")).toBeNull();
     expect(normaliseManufacturer("Umbro")).toBe("umbro");
+  });
+});
+
+describe("playerKey", () => {
+  it("compares by surname", () => {
+    for (const n of ["Steven Gerrard", "Gerrard", "S Gerrard", "Liverpool Gerrard"]) expect(playerKey(n), n).toBe("gerrard");
+    expect(playerKey("Zlatan Ibrahimović")).toBe("ibrahimovic");
+    expect(playerKey(null)).toBeNull();
+    expect(playerKey("  ")).toBeNull();
+  });
+});
+
+describe("namesetFromUrl", () => {
+  it("reads a printed name and number from shop product URLs", () => {
+    expect(namesetFromUrl("https://thesoccerarchive.com/products/liverpool-2008-09-third-shirt-gerrard-8-8-11")).toEqual({ player: "gerrard", number: "8" });
+    expect(namesetFromUrl("https://thesoccerarchive.com/products/arsenal-2006-08-home-shirt-henry-14-8-10")).toEqual({ player: "henry", number: "14" });
+    expect(namesetFromUrl("https://www.classicfootballshirts.co.uk/2013-14-liverpool-home-shirt-gerrard-8-610-3xl-livh13492624.html")).toEqual({
+      player: "gerrard",
+      number: "8",
+    });
+    expect(namesetFromUrl("https://www.footballfinery.co.uk/products/2008-09-watford-home-football-shirt-l-diadora-8-eustace-ff301925")).toEqual({
+      player: "eustace",
+      number: "8",
+    });
+    expect(namesetFromUrl("https://example.com/products/newcastle-1996-97-home-shirt-shearer-9-10-10")).toEqual({ player: "shearer", number: "9" });
+  });
+
+  it("finds nothing on plain shirts, grades, sizes, seasons and non-shop URLs", () => {
+    for (const url of [
+      "https://thesoccerarchive.com/products/liverpool-2008-09-third-shirt-8-10",
+      "https://www.vintagefootballshirts.com/products/1986-87-liverpool-adidas-away-shirt-m-46821",
+      "https://www.classicfootballshirts.co.uk/2020-21-barcelona-home-shirt-810-lboys-barsh2054542.html",
+      "https://www.footballfinery.co.uk/products/1991-92-liverpool-away-football-shirt-l-adidas-ff305115",
+      "https://www.thekitman.co.uk/product/2005-06-chelsea-umbro-centenary-home-shirt-medium-mens/",
+      "https://www.ebay.co.uk/itm/800009080846",
+      "not a url",
+      null,
+    ]) {
+      expect(namesetFromUrl(url), String(url)).toBeNull();
+    }
   });
 });

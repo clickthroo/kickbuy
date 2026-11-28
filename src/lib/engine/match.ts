@@ -11,13 +11,14 @@ import {
   type Condition,
   CONDITIONS,
   norm,
+  namesetFromUrl,
   normaliseManufacturer,
   normaliseNumber,
-  normalisePlayer,
   normaliseSeason,
   normaliseSize,
   type NormalisedSize,
   normaliseUrl,
+  playerKey,
 } from "./normalise";
 import type { InventoryRow, SaleRow, TeamLookup } from "./types";
 
@@ -41,8 +42,9 @@ export type Shirt = {
   signed: string;
   specialEdition: string;
   boxedEdition: string;
-  // A missing name means "no name set", so names must match exactly; a
-  // missing number with a matching name is allowed at low confidence.
+  // A missing name means "no name set", so names must match (by surname); a
+  // missing number with a matching name is allowed at low confidence. When
+  // Kickio has neither, the shop's product URL can still show a name set.
   player: string | null;
   number: string | null;
   sourceUrl: string | null;
@@ -53,6 +55,12 @@ const notApplicable = (v: string | null) => (v === null || v === "not applicable
 export function toShirt(row: InventoryRow | SaleRow, teams: TeamLookup): Shirt {
   const teamName = norm(row.team);
   const teamId = row.team_id ?? (teamName ? teams(teamName) : null);
+  let player = playerKey(row.player_name);
+  let number = normaliseNumber(row.shirt_number);
+  if (player === null && number === null) {
+    const fromUrl = namesetFromUrl(row.source_url) ?? ("sale_url" in row ? namesetFromUrl(row.sale_url) : null);
+    if (fromUrl) ({ player, number } = fromUrl);
+  }
   return {
     productId: row.product_id,
     teamKey: teamId ? `id:${teamId}` : teamName ? `name:${teamName}` : null,
@@ -67,8 +75,8 @@ export function toShirt(row: InventoryRow | SaleRow, teams: TeamLookup): Shirt {
     signed: norm(row.signed) ?? "not signed",
     specialEdition: norm(row.special_edition) ?? "not a special edition",
     boxedEdition: norm(row.boxed_edition) ?? "not a boxed edition",
-    player: normalisePlayer(row.player_name),
-    number: normaliseNumber(row.shirt_number),
+    player,
+    number,
     sourceUrl: normaliseUrl(row.source_url),
   };
 }
@@ -132,15 +140,17 @@ export function matchShirts(listing: Shirt, sale: Shirt, opts: { requireExactSiz
     if (!listing.teamKey || listing.teamKey !== sale.teamKey) return { ok: false, reason: "different club" };
     if (!listing.season || listing.season !== sale.season) return { ok: false, reason: "different season" };
     if (!listing.shirtType || listing.shirtType !== sale.shirtType) return { ok: false, reason: "different shirt type" };
-    if (listing.player !== sale.player) return { ok: false, reason: "different player / name set" };
-    if (listing.number !== sale.number) {
-      // Same player name, but one side has no number recorded ("Ronaldo" vs
-      // "Ronaldo #7"): most likely the same printing, so keep it for a check.
-      if (listing.player === null || (listing.number !== null && sale.number !== null)) {
-        return { ok: false, reason: "different number" };
-      }
-      numberAssumed = `number missing on the ${listing.number === null ? "listing" : "sale"}`;
+  }
+  // Checked even for the same Kickio product: a scraped item's product link
+  // can be wrong, and its URL may show a name set the product doesn't have.
+  if (listing.player !== sale.player) return { ok: false, reason: "different player / name set" };
+  if (listing.number !== sale.number) {
+    // Same player name, but one side has no number recorded ("Ronaldo" vs
+    // "Ronaldo #7"): most likely the same printing, so keep it for a check.
+    if (listing.player === null || (listing.number !== null && sale.number !== null)) {
+      return { ok: false, reason: "different number" };
     }
+    numberAssumed = `number missing on the ${listing.number === null ? "listing" : "sale"}`;
   }
   if (listing.signed !== sale.signed) return { ok: false, reason: "signed vs not signed" };
   if (listing.specialEdition !== sale.specialEdition) return { ok: false, reason: "different special edition" };

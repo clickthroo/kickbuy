@@ -140,3 +140,57 @@ export function normaliseUrl(value: string | null | undefined): string | null {
     return norm(value);
   }
 }
+
+// A player name reduced to the surname, so "Steven Gerrard", "Gerrard" and
+// scraped noise like "Barcelona Messi" or "Centenary Lampard" all compare
+// equal. Numbers still have to agree when both sides have one.
+export function playerKey(value: string | null | undefined): string | null {
+  const s = normalisePlayer(value);
+  if (s === null) return null;
+  const words = s.split(" ").filter((w) => /[a-z]/.test(w));
+  return words.length ? words[words.length - 1] : s;
+}
+
+// Words that sit next to a number in a product URL without being a printed
+// name: kit words, sizes, makers, grades.
+const NOT_A_NAME = new Set(
+  (
+    "shirt jersey top kit football soccer home away third fourth gk goalkeeper keeper training ls ss long short sleeve " +
+    "sleeved retro vintage classic original authentic player issue match worn prepared replica bnwt bnib new tags kids " +
+    "boys girls youth junior womens ladies mens adult small medium large xs s m l xl xxl xxxl xxxxl 2xl 3xl 4xl 5xl " +
+    "mboys lboys xlboys sboys xsboys yrs years months size the and with of edition special limited anniversary centenary " +
+    "cup final league champions europa season euro world adidas nike umbro puma kappa diadora reebok lotto hummel " +
+    "le coq sportif errea macron joma castore admiral asics mizuno uhlsport fila hummel new balance under armour " +
+    "warrior pony ribero bukta patrick o neills avec score draw signed"
+  ).split(" "),
+);
+
+// The name and number printed on the shirt, when the shop's product URL says
+// ("…-third-shirt-gerrard-8-8-10", "…-home-shirt-gerrard-8-610-3xl-…",
+// "…-football-shirt-l-diadora-8-eustace-ff301925"). Kickio often leaves the
+// player blank on scraped items, so without this a Gerrard 8 shirt would be
+// compared with a plain one. Only looks after the "shirt" word, and only at
+// a 1-2 digit number next to a word that isn't a size, maker or kit word.
+export function namesetFromUrl(url: string | null | undefined): { player: string; number: string } | null {
+  if (!url) return null;
+  let path: string;
+  try {
+    path = new URL(url).pathname.toLowerCase();
+  } catch {
+    return null;
+  }
+  const slug = path.replace(/\/$/, "").split("/").pop()?.replace(/\.html?$/, "") ?? "";
+  const tokens = slug.split("-");
+  const start = tokens.findIndex((t) => t === "shirt" || t === "jersey");
+  if (start < 0) return null;
+  const isName = (t: string | undefined) => !!t && /^[a-z]{3,}$/.test(t) && !NOT_A_NAME.has(t);
+  for (let i = start + 1; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (!/^\d{1,2}$/.test(t) || t === "0") continue;
+    if (isName(tokens[i - 1])) return { player: tokens[i - 1], number: String(Number(t)) };
+    // "8-10" is a condition grade, not a number.
+    if (/^(9|10|11)$/.test(tokens[i + 1] ?? "") && Number(t) <= 10) continue;
+    if (isName(tokens[i + 1])) return { player: tokens[i + 1], number: String(Number(t)) };
+  }
+  return null;
+}

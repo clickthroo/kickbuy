@@ -15,6 +15,7 @@
 import type postgres from "postgres";
 import { evaluateListing, type Evaluation, SalesIndex } from "../engine/evaluate";
 import { norm } from "../engine/normalise";
+import { trustedSales } from "../engine/sale-quality";
 import { notAFootballShirt, outsideSettings } from "../engine/scope";
 import type { FxLookup, InventoryRow, SaleRow } from "../engine/types";
 import { type AppSettings, loadSettings } from "../settings";
@@ -173,7 +174,8 @@ async function scan(
   }
   const teams = (name: string) => teamByName.get(name) ?? null;
 
-  const sales = await loadSales(db.kickio);
+  // Crawled "sales" that came in a burst or sold twice aren't evidence.
+  const sales = trustedSales(await loadSales(db.kickio));
   const index = new SalesIndex(sales, teams);
 
   const existing = new Map(
