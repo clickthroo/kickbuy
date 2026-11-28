@@ -25,7 +25,7 @@ export function OpportunityTable({
           <li key={o.id} className="card relative p-3">
             <div className="flex gap-3">
               <Thumb url={o.image_url} className="h-16 w-16" />
-              <div className="min-w-0 flex-1 pr-8">
+              <div className="min-w-0 flex-1 pr-10">
                 <Link href={`/opportunities/${o.id}`} className="font-medium leading-snug after:absolute after:inset-0">
                   {o.title}
                 </Link>
@@ -33,7 +33,7 @@ export function OpportunityTable({
               </div>
             </div>
             {canRemove && (
-              <div className="absolute top-1 right-1 z-10">
+              <div className="absolute top-0 right-0 z-20 p-0.5">
                 <RemoveButton id={o.id} title={o.title} />
               </div>
             )}
