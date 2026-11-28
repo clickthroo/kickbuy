@@ -34,6 +34,8 @@ export type InventoryRow = Identity & {
   raw_price_cents: number | null;
   image_url: string | null;
   description: string | null;
+  // The shop's own title for a scraped item, when Kickio keeps it.
+  source_title?: string | null;
   created_at: Date;
   updated_at: Date;
 };

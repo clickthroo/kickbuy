@@ -8,7 +8,7 @@
 import { canonicalCondition, CONDITIONS, normaliseSize } from "./normalise";
 import type { Settings } from "./types";
 
-type Item = { source_url: string | null; shirt_type: string | null; description: string | null };
+type Item = { source_url: string | null; shirt_type: string | null; description: string | null; source_title?: string | null };
 
 // Whole words in the URL path. "shorts" may run straight into a product code
 // ("third-shortshe2980"), so it only needs a boundary before it.
@@ -47,6 +47,8 @@ export function notAFootballShirt(item: Item): string | null {
       if (code) return `Not a football shirt: the shop's product code marks it as ${CFS_KINDS[code[1]]}`;
     }
   }
+  const fromTitle = titleSaysNotAShirt(item.source_title);
+  if (fromTitle) return fromTitle;
   const type = item.shirt_type && TYPES.exec(item.shirt_type.toLowerCase());
   if (type) return `Not a football shirt: Kickio lists it as "${item.shirt_type}"`;
   const description = item.description && decodeEntities(item.description.replace(/<[^>]+>/g, " ")).toLowerCase();
@@ -64,9 +66,10 @@ function decodeEntities(s: string): string {
     .replace(/&nbsp;/g, " ");
 }
 
-// The shop's own listing title (from eBay or Vinted, where the URL is just an
-// item number). Titles are short and say what the item is, so single words
-// are enough here: "Chelsea Football Shirt 2015/2016 Training Excellent".
+// The shop's own listing title, which Kickio replaces with a generated one
+// (and which an eBay or Vinted URL, just an item number, doesn't show).
+// Titles are short and say what the item is, so single words are enough here:
+// "Chelsea Football Shirt 2015/2016 Training Excellent".
 const TITLE_WORDS =
   /\b(training|polo|jacket|track ?top|tracksuit|hoodie|hoody|hooded|sweatshirt|sweater|jumper|fleece|shorts|socks|scarf|t-shirt|tee|vest|gilet|pre-?match|warm[- ]?up|fan version|fan shirt|baby ?grow|bib|rugby|cricket|basketball|nba|nfl|anorak|windbreaker|presentation|leisure|mini ?kit|full kit)\b/;
 

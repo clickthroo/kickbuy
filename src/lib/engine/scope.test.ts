@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { notAFootballShirt, outsideSettings } from "./scope";
+import { notAFootballShirt, outsideSettings, titleSaysNotAShirt } from "./scope";
 
 const cfs = (slug: string) => `https://www.classicfootballshirts.co.uk/${slug}.html`;
-const item = (o: { source_url?: string | null; shirt_type?: string | null; description?: string | null }) => ({
+const item = (o: { source_url?: string | null; shirt_type?: string | null; description?: string | null; source_title?: string | null }) => ({
   source_url: null,
   shirt_type: "Home",
   description: null,
@@ -108,6 +108,25 @@ describe("notAFootballShirt", () => {
     ]) {
       expect(notAFootballShirt(item({ source_url: url })), url).toBeNull();
     }
+  });
+});
+
+describe("the shop's own title", () => {
+  it("rules out training tops and other non-shirts Kickio filed as shirts", () => {
+    const ebay = "https://www.ebay.co.uk/itm/880111905556";
+    expect(notAFootballShirt(item({ source_url: ebay, source_title: "Chelsea Football Shirt 2015/2016 Training Excellent Mens Large Genuine" }))).toBe(
+      'Not a football shirt: the shop\'s title says "training"',
+    );
+    for (const t of ["Liverpool Polo Shirt Adidas", "Man Utd 1990s Track Top", "Arsenal Pre-Match Shirt 2019", "England Fan Version Shirt", "Leeds Home Shorts Large"]) {
+      expect(titleSaysNotAShirt(t), t).toMatch(/Not a football shirt/);
+    }
+  });
+
+  it("keeps match shirts, and items with no title", () => {
+    for (const t of ["Chelsea Football Shirt 2015/2016 Home Adidas Large", "England 2002 Reversible Home Shirt (Training Side Inside)", "Celtic 1990s Away Shirt Umbro", null, undefined]) {
+      expect(titleSaysNotAShirt(t), String(t)).toBeNull();
+    }
+    expect(notAFootballShirt(item({ source_title: null }))).toBeNull();
   });
 });
 

@@ -8,7 +8,6 @@ import path from "node:path";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { runScan } from "../src/lib/scan/run";
-import { checkSources } from "../src/lib/scan/source-check";
 import { deliverTelegramAlerts } from "../src/lib/telegram/deliver";
 
 const base = process.env.KICKBUY_TEST_PG;
@@ -354,42 +353,6 @@ describe.skipIf(!base)("scan (integration)", () => {
     }
   });
 
-  it("removes an opportunity whose eBay title says it's a training top, and keeps it out", async () => {
-    const L = "20000000-0000-0000-0000-000000000098";
-    const EBAY = "https://www.ebay.co.uk/itm/880111905556";
-    await kickioOwner`
-      insert into public.listings (id, title, product_id, size, condition, status, price_cents, source_url, updated_at)
-      values (${L}, 'Shirt', ${P_UTD}, 'L', 'Very Good', 'active', 2500, ${EBAY}, now())
-    `;
-    await runScan(db, { trigger: "manual" });
-    const [before] = await db.app`select status, removed_at from kickbuy.opportunities where listing_id = ${L}`;
-    expect(before).toMatchObject({ status: "new", removed_at: null });
-
-    const fetched: string[] = [];
-    const r = await checkSources(db.app, {
-      fetchHtml: async (u) => {
-        fetched.push(u);
-        return u === EBAY
-          ? "<title>Chelsea Football Shirt 2015/2016 Training Excellent Mens Large | eBay</title>"
-          : "<title>Pardon Our Interruption...</title>";
-      },
-    });
-    expect(fetched).toContain(EBAY);
-    expect(r.removed).toBe(1);
-    const [after] = await db.app`select status, removed_at, removed_reason from kickbuy.opportunities where listing_id = ${L}`;
-    expect(after.status).toBe("expired");
-    expect(after.removed_at).not.toBeNull();
-    expect(after.removed_reason).toBe('Not a football shirt: the shop\'s title says "training"');
-
-    // Already checked: not fetched again, and a full scan doesn't bring it back.
-    fetched.length = 0;
-    await checkSources(db.app, { fetchHtml: async (u) => (fetched.push(u), "<title>x</title>") });
-    expect(fetched).not.toContain(EBAY);
-    await runScan(db, { trigger: "manual", forceFull: true });
-    const [still] = await db.app`select status, removed_at from kickbuy.opportunities where listing_id = ${L}`;
-    expect(still.status).toBe("expired");
-    expect(still.removed_at).not.toBeNull();
-  });
 });
 
 async function insert(sql: postgres.Sql, table: string, rows: Record<string, unknown>[]) {

@@ -20,7 +20,6 @@ import { notAFootballShirt, outsideSettings } from "../engine/scope";
 import type { FxLookup, InventoryRow, SaleRow } from "../engine/types";
 import { type AppSettings, loadSettings } from "../settings";
 import { decide, type ExistingOpportunity } from "./lifecycle";
-import { loadSourceChecks } from "./source-check";
 
 export type Databases = { kickio: postgres.Sql; app: postgres.Sql };
 
@@ -66,6 +65,19 @@ const INVENTORY_COLUMNS = `listing_id, product_id, seller_id, title, status, pre
   source_name, is_partner_listing, price_cents, raw_price_cents, currency, size, condition, team, team_id,
   season, shirt_type, manufacturer, gender, issue, special_edition, sleeves, signed, boxed_edition,
   player_name, shirt_number, image_url, description, created_at, updated_at`;
+
+// The shop's own title for a scraped item ("Chelsea Football Shirt 2015/2016
+// Training..."), once Kickio's inventory view provides it. Read only when the
+// column exists, so KickBuy works before and after Kickio adds it.
+async function inventoryColumns(sql: postgres.Sql): Promise<string> {
+  const [{ has }] = await sql<{ has: boolean }[]>`
+    select exists (
+      select 1 from information_schema.columns
+      where table_schema = 'kickbuy' and table_name = 'inventory' and column_name = 'source_title'
+    ) as has
+  `;
+  return has ? `${INVENTORY_COLUMNS}, source_title` : `${INVENTORY_COLUMNS}, null::text as source_title`;
+}
 
 export async function runScan(db: Databases, opts: ScanOptions): Promise<ScanResult> {
   const now = opts.now ?? new Date();
@@ -178,6 +190,7 @@ async function scan(
   // Crawled "sales" that came in a burst or sold twice aren't evidence.
   const sales = trustedSales(await loadSales(db.kickio));
   const index = new SalesIndex(sales, teams);
+  const columns = await inventoryColumns(db.kickio);
 
   const existing = new Map(
     (
@@ -191,11 +204,11 @@ async function scan(
   let listings: InventoryRow[];
   let checkedIds: Set<string>; // opportunities whose listing we looked for
   if (since === null) {
-    listings = await loadInventory(db.kickio, {});
+    listings = await loadInventory(db.kickio, columns, {});
     checkedIds = new Set(existing.keys());
   } else {
     const from = new Date(since.getTime() - OVERLAP_MS);
-    const changed = await loadInventory(db.kickio, { changedSince: from });
+    const changed = await loadInventory(db.kickio, columns, { changedSince: from });
 
     // Listings that a newly recorded sale could now value.
     const newSales = sales.filter((s) => s.created_at.getTime() >= from.getTime());
@@ -210,11 +223,11 @@ async function scan(
     }
     const affected =
       productIds.length || teamNames.size
-        ? await loadInventory(db.kickio, { productIds, teamNames: [...teamNames] })
+        ? await loadInventory(db.kickio, columns, { productIds, teamNames: [...teamNames] })
         : [];
 
     const open = [...existing.entries()].filter(([, o]) => o.status !== "expired").map(([id]) => id);
-    const reopened = open.length ? await loadInventory(db.kickio, { listingIds: open }) : [];
+    const reopened = open.length ? await loadInventory(db.kickio, columns, { listingIds: open }) : [];
 
     const byId = new Map<string, InventoryRow>();
     for (const l of [...changed, ...affected, ...reopened]) byId.set(l.listing_id, l);
@@ -226,15 +239,11 @@ async function scan(
   // any opportunity already raised for one is removed for good. Sizes and
   // conditions outside the settings aren't valued either; their opportunities
   // expire, and come back if the settings change.
-  // The shop's own page (checked after earlier scans) can also say it isn't
-  // a shirt, or that the listing has ended.
   const listingsScanned = listings.length;
   const outOfScope = new Map<string, GoneReason>();
-  const sourceChecks = await loadSourceChecks(db.app);
   listings = listings.filter((l) => {
-    const check = sourceChecks.get(l.listing_id);
-    const notShirt = notAFootballShirt(l) ?? check?.not_shirt ?? null;
-    const reason = notShirt ?? (check?.ended ? "The shop listing has ended" : null) ?? outsideSettings(l, settings);
+    const notShirt = notAFootballShirt(l);
+    const reason = notShirt ?? outsideSettings(l, settings);
     if (!reason) return true;
     if (existing.has(l.listing_id)) {
       outOfScope.set(l.listing_id, { reason, remove: notShirt !== null });
@@ -374,7 +383,7 @@ type InventoryFilter = {
 };
 
 // Keyset-paginated reads of Kickio's inventory view.
-async function loadInventory(sql: postgres.Sql, f: InventoryFilter): Promise<InventoryRow[]> {
+async function loadInventory(sql: postgres.Sql, columns: string, f: InventoryFilter): Promise<InventoryRow[]> {
   const out: InventoryRow[] = [];
   let after = "00000000-0000-0000-0000-000000000000";
   const where = [
@@ -388,7 +397,7 @@ async function loadInventory(sql: postgres.Sql, f: InventoryFilter): Promise<Inv
     .reduce((acc, w) => sql`${acc} and ${w}`, sql``);
   for (;;) {
     const page = await sql<InventoryRow[]>`
-      select ${sql.unsafe(INVENTORY_COLUMNS)}
+      select ${sql.unsafe(columns)}
       from kickbuy.inventory
       where listing_id > ${after}
         and seller_id <> all(${EXCLUDED_SELLER_IDS}::uuid[])
